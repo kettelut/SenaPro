@@ -1,4 +1,4 @@
-using SenaPro.Infra.IoC;
+using SenaPro.Infra;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SenaPro.Aplicacao\SenaPro.Aplicacao.csproj" />
+    <ProjectReference Include="..\SenaPro.Application\SenaPro.Application.csproj" />
   </ItemGroup>
 
 </Project>

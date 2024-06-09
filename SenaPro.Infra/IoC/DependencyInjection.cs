@@ -25,7 +25,7 @@ namespace SenaPro.Infra
 			serviceCollection.AddScoped<ISenaProService, SenaProService>();
 
             // Infra
-            serviceCollection.AddScoped<IMegaSena, MegaSena>();
+            serviceCollection.AddScoped<IMegaSenaResourceAccess, MegaSenaResourceAccess>();
         }
 	}
 }

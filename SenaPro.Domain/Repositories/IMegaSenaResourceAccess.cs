@@ -2,7 +2,7 @@
 
 namespace SenaPro.Domain.Repositories
 { 
-    public interface IMegaSena
+    public interface IMegaSenaResourceAccess
     {
         /// <summary>
         /// Obtém a lista de sorteios da Mega-Sena a partir do arquivo XLSX.

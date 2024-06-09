@@ -1,7 +1,6 @@
 ﻿using SenaPro.Domain.Entities;
 using SenaPro.Domain.Repositories;
 using SenaPro.Domain.Services.Interfaces;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SenaPro.Domain.Services
 {
@@ -14,7 +13,7 @@ namespace SenaPro.Domain.Services
         /// <summary>
         /// Interface para acesso aos dados da Mega-Sena.
         /// </summary>
-        private readonly IMegaSena _megaSena;
+        private readonly IMegaSenaResourceAccess _megaSenaResourceAccess;
 
         /// <summary>
         /// Lista de todos os sorteios realizados.
@@ -27,10 +26,10 @@ namespace SenaPro.Domain.Services
         /// Inicializa uma nova instância da classe <see cref="SenaProService"/>.
         /// </summary>
         /// <param name="megaSena">Interface para acesso aos dados da Mega-Sena.</param>
-        public SenaProService(IMegaSena megaSena)
+        public SenaProService(IMegaSenaResourceAccess megaSenaResourceAccess)
         {
-            _megaSena = megaSena;
-            _sorteios = _megaSena.ObterSorteios();
+            _megaSenaResourceAccess = megaSenaResourceAccess;
+            _sorteios = _megaSenaResourceAccess.ObterSorteios();
         }
         #endregion
 

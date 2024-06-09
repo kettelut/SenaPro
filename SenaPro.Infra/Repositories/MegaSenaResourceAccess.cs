@@ -7,7 +7,7 @@ namespace SenaPro.Infra.Repositories
     /// <summary>
     /// Classe responsável por manipular e obter informações dos resultados da Mega-Sena.
     /// </summary>
-    public class MegaSena : IMegaSena
+    public class MegaSenaResourceAccess : IMegaSenaResourceAccess
     {
         /// <summary>
         /// Caminho para o arquivo XLSX contendo os resultados dos concursos realizados.
@@ -15,9 +15,9 @@ namespace SenaPro.Infra.Repositories
         private string _filePath;
 
         /// <summary>
-        /// Inicializa uma nova instância da classe <see cref="MegaSena"/> com o caminho padrão para o arquivo de resultados.
+        /// Inicializa uma nova instância da classe <see cref="MegaSenaResourceAccess"/> com o caminho padrão para o arquivo de resultados.
         /// </summary>
-        public MegaSena()
+        public MegaSenaResourceAccess()
         {
             _filePath = @"C:\Projetos\SenaPro\SenaPro.Infra\Files\Mega-Sena.xlsx";
         }

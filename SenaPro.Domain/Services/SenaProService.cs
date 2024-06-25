@@ -1,6 +1,7 @@
 ﻿using SenaPro.Domain.Entities;
 using SenaPro.Domain.Repositories;
 using SenaPro.Domain.Services.Interfaces;
+using System.Linq;
 
 namespace SenaPro.Domain.Services
 {
@@ -178,9 +179,192 @@ namespace SenaPro.Domain.Services
             }
             return 0;
         }
+
+        /// <summary>
+        /// Gera uma lista de sugestões de números para o próximo sorteio, com base nos sorteios anteriores.
+        /// </summary>
+        /// <param name="qntNumerosPorJogo">A quantidade de números a serem sugeridos para cada jogo. Deve ser maior ou igual a 6.</param>
+        /// <param name="qntDeJogos">A quantidade de jogos para os quais serão geradas sugestões. Deve ser maior ou igual a 1.</param>
+        /// <returns>Uma lista de listas de inteiros, onde cada lista interna representa um conjunto sugerido de números para um jogo.</returns>
+        /// <exception cref="ArgumentException">Lançada quando a quantidade de números por jogo é menor que 6 ou a quantidade de jogos é menor que 1.</exception>
+        public List<List<int>> ObterSugetaoParaProximoSorteio(int qntNumerosPorJogo, int qntDeJogos)
+        {
+            // Validação dos parâmetros
+            if (qntNumerosPorJogo < 6)
+            {
+                throw new ArgumentException("A quantidade de números por jogo não pode ser menor que 6.");
+            }
+
+            if (qntDeJogos < 1)
+            {
+                throw new ArgumentException("A quantidade de jogos deve ser igual ou maior que 1.");
+            }
+
+            var response = new List<List<int>>();
+            var random = new Random();
+            var numerosSorteados = _sorteios.Select(s => s.NumerosSorteados).ToList();
+
+            for (int i = 0; i < qntDeJogos; i++)
+            {
+                var numerosSugeridos = ObterNumeroSugeridos(numerosSorteados, qntNumerosPorJogo);
+                response.Add(numerosSugeridos);
+            }
+
+            return response;
+        }
         #endregion
 
         #region Métodos Privados
+        /// <summary>
+        /// Gera uma lista de números sugeridos com base em simulações de sorteios anteriores e na frequência de ocorrência
+        /// dos números sorteados, utilizando o método de Monte Carlo.
+        /// </summary>
+        /// <param name="numerosSorteados">Uma lista de listas de inteiros, onde cada lista interna representa um conjunto de números sorteados.</param>
+        /// <param name="qntNumerosPrevisao">O número de previsões de números a serem gerados.</param>
+        /// <returns>Uma lista de inteiros representando os números sugeridos, ordenados em ordem crescente.</returns>
+        private List<int> ObterNumeroSugeridos(List<List<int>> numerosSorteados, int qntNumerosPrevisao)
+        {
+            var conjuntosSorteados = new HashSet<string>(numerosSorteados.Select(s => string.Join("-", s.OrderBy(n => n))));
+
+            var ultimosSorteiosTodosNumeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularQntMaximaDeSorteiosAnterioresParaLocalizarQntNumeros(6)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            var ultimosSorteios6Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(6)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            var ultimosSorteios5Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(5)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            var ultimosSorteios4Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(4)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            var ultimosSorteios3Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(3)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            var ultimosSorteios2Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(2)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            var ultimosSorteios1Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(1)))
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .ToList();
+
+            int numeroDeSimulacoes = 1000000; // Número de simulações de Monte Carlo
+            List<int> numerosSugeridos = new List<int>();
+            Random random = new Random();
+            bool numerosSugeridosValidos = false;
+
+            while (!numerosSugeridosValidos)
+            {
+                var resultadosSimulacao = SimularSorteios(numeroDeSimulacoes);
+                var frequenciaNumeros = CalcularFrequencia(resultadosSimulacao);
+
+                numerosSugeridos = frequenciaNumeros
+                    .OrderByDescending(kv => kv.Value)
+                    .ThenBy(kv => random.Next()) // Adiciona aleatoriedade na seleção dos números
+                    .Take(qntNumerosPrevisao)
+                    .Select(kv => kv.Key)
+                    .OrderBy(n => n)
+                    .ToList();
+
+                var combinacoes = new Combinacoes();
+                var resultado = combinacoes.CalculaCombinacoes(numerosSugeridos, 6);
+
+                List<bool> validacoes = new List<bool>();
+                foreach(List<int> combinacao in resultado)
+                {
+                    bool validaRepeticao = !conjuntosSorteados.Contains(string.Join("-", combinacao.OrderBy(n => n)));
+                    bool valida6Numeros = combinacao.Count(num => ultimosSorteios6Numeros.Contains(num)) == 6;
+                    bool valida5Numeros = combinacao.Count(num => ultimosSorteios5Numeros.Contains(num)) == 5;
+                    bool valida4Numeros = combinacao.Count(num => ultimosSorteios4Numeros.Contains(num)) == 4;
+                    bool valida3Numeros = combinacao.Count(num => ultimosSorteios3Numeros.Contains(num)) == 3;
+                    bool valida2Numeros = combinacao.Count(num => ultimosSorteios2Numeros.Contains(num)) == 2;
+                    bool valida1Numeros = combinacao.Count(num => ultimosSorteios1Numeros.Contains(num)) == 1;
+                    validacoes.Add(validaRepeticao && valida6Numeros && valida5Numeros && valida4Numeros && valida3Numeros && valida2Numeros && valida1Numeros);
+                }
+
+                numerosSugeridosValidos = numerosSugeridos.Count(num => ultimosSorteiosTodosNumeros.Contains(num)) == qntNumerosPrevisao && (!validacoes.Exists(x => x == false));
+ 
+            }
+
+            return numerosSugeridos;
+        }
+
+        /// <summary>
+        /// Calcula a frequência de ocorrência de cada número em uma lista de sorteios simulados.
+        /// </summary>
+        /// <param name="resultadosSimulacao">Uma lista de arrays, onde cada array representa um sorteio simulado contendo 6 números inteiros.</param>
+        /// <returns>Um dicionário onde a chave é um número inteiro e o valor é a quantidade de vezes que o número apareceu em todos os sorteios simulados.</returns>
+        private Dictionary<int, int> CalcularFrequencia(List<int[]> resultadosSimulacao)
+        {
+            var frequencia = new Dictionary<int, int>();
+
+            foreach (var sorteio in resultadosSimulacao)
+            {
+                foreach (var numero in sorteio)
+                {
+                    if (frequencia.ContainsKey(numero))
+                    {
+                        frequencia[numero]++;
+                    }
+                    else
+                    {
+                        frequencia[numero] = 1;
+                    }
+                }
+            }
+
+            return frequencia;
+        }
+
+        /// <summary>
+        /// Simula múltiplos sorteios da Mega-Sena gerando números aleatórios.
+        /// Cada sorteio consiste em 6 números únicos entre 1 e 60.
+        /// </summary>
+        /// <param name="numeroDeSimulacoes">O número de sorteios a serem simulados.</param>
+        /// <returns>Uma lista de arrays, onde cada array contém 6 números inteiros representando um sorteio simulado.</returns>
+        private List<int[]> SimularSorteios(int numeroDeSimulacoes)
+        {
+            var resultados = new List<int[]>();
+            var random = new Random();
+
+            for (int i = 0; i < numeroDeSimulacoes; i++)
+            {
+                var sorteioSimulado = new int[6];
+                var numerosSorteados = new HashSet<int>();
+
+                while (numerosSorteados.Count < 6)
+                {
+                    int numeroSorteado = random.Next(1, 61); // Números de 1 a 60
+                    numerosSorteados.Add(numeroSorteado);
+                }
+
+                numerosSorteados.CopyTo(sorteioSimulado);
+                resultados.Add(sorteioSimulado);
+            }
+
+            return resultados;
+        }
+
         /// <summary>
         /// Calcula a quantidade de sorteios necessários para encontrar os números que faltam para formar um conjunto de números específico.
         /// </summary>
@@ -248,13 +432,29 @@ namespace SenaPro.Domain.Services
         /// Para tamanhos maiores, gera todas as combinações menores e as expande adicionando cada um dos elementos não presentes na combinação menor.
         /// Este método não verifica por duplicatas na lista de entrada e assume que todos os elementos são únicos.
         /// </remarks>
-        private static IEnumerable<IEnumerable<T>> GetCombinacoes<T>(IEnumerable<T> list, int length)
+        private IEnumerable<List<int>> GetCombinacoes(List<int> lista, int tamanho)
         {
-            if (length == 1) return list.Select(t => new T[] { t });
+            int[] resultado = new int[tamanho];
+            Stack<int> stack = new Stack<int>(tamanho);
+            stack.Push(0);
 
-            return GetCombinacoes(list, length - 1)
-                .SelectMany(t => list.Where(o => !t.Contains(o)),
-                            (t1, t2) => t1.Concat(new T[] { t2 }));
+            while (stack.Count > 0)
+            {
+                int index = stack.Count - 1;
+                int value = stack.Pop();
+
+                while (value < lista.Count)
+                {
+                    resultado[index++] = lista[value++];
+                    stack.Push(value);
+
+                    if (index == tamanho)
+                    {
+                        yield return new List<int>(resultado);
+                        break;
+                    }
+                }
+            }
         }
         #endregion
     }

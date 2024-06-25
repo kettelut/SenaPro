@@ -86,5 +86,15 @@ namespace SenaPro.Application.Services
 
             return response;
         }
+
+        /// <summary>
+        /// Gera uma lista de sugestões de números para o próximo sorteio, com base nos sorteios anteriores.
+        /// </summary>
+        /// <param name="qntNumerosPorJogo">A quantidade de números a serem sugeridos para cada jogo. Deve ser maior ou igual a 6.</param>
+        /// <param name="qntDeJogos">A quantidade de jogos para os quais serão geradas sugestões. Deve ser maior ou igual a 1.</param>
+        /// <returns>Uma lista de listas de inteiros, onde cada lista interna representa um conjunto sugerido de números para um jogo.</returns>
+        /// <exception cref="ArgumentException">Lançada quando a quantidade de números por jogo é menor que 6 ou a quantidade de jogos é menor que 1.</exception>
+        public List<List<int>> ObterSugetaoParaProximoSorteio(int qntNumerosPorJogo, int qntDeJogos) => _senaProService.ObterSugetaoParaProximoSorteio(qntNumerosPorJogo, qntDeJogos);
+        
     }
 }

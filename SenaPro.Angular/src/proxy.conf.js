@@ -1,7 +1,7 @@
 const PROXY_CONFIG = [
   {
     context: [
-      "/cbd",
+      "/senapro",
     ],
     target: "https://localhost:7235/",
     secure: true

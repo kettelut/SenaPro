@@ -12,5 +12,6 @@ namespace SenaPro.Domain.Entities
         public int QntMaximaDeSorteios { get; set; }
         public int QntMinimaDeSorteios { get; set; }
         public int QntMediaDeSorteios { get; set; }
+        public List<FrequenciaNumeral> FrequenciaNumeral { get; set; }
     }
 }

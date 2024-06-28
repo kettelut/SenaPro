@@ -81,6 +81,7 @@ namespace SenaPro.Application.Services
                 calculoSorteiosAnteriores.QntMaximaDeSorteios = _senaProService.CalcularQntMaximaDeSorteiosAnterioresParaLocalizarQntNumeros(i);
                 calculoSorteiosAnteriores.QntMinimaDeSorteios = _senaProService.CalcularQntMinimaDeSorteiosAnterioresParaLocalizarQntNumeros(i);
                 calculoSorteiosAnteriores.QntMediaDeSorteios = Convert.ToInt32(_senaProService.CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(i));
+                calculoSorteiosAnteriores.FrequenciaNumeral = _senaProService.CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(i).Take(10).ToList();
                 response.Add(calculoSorteiosAnteriores);
             }
 

@@ -69,5 +69,12 @@ namespace SenaPro.Domain.Services.Interfaces
         /// <returns>Uma lista de listas de inteiros, onde cada lista interna representa um conjunto sugerido de números para um jogo.</returns>
         /// <exception cref="ArgumentException">Lançada quando a quantidade de números por jogo é menor que 6 ou a quantidade de jogos é menor que 1.</exception>
         List<List<int>> ObterSugetaoParaProximoSorteio(int qntNumerosPorJogo, int qntDeJogos);
+
+        /// <summary>
+        /// Calcula a frequencia de sorteios anteriores necessários para localizar uma quantidade específica de números.
+        /// </summary>
+        /// <param name="qntNumerosAnalisar">A quantidade de números a serem analisados.</param>
+        /// <returns>A frequencia de sorteios anteriores necessários para localizar a quantidade específica de números.</returns>
+        List<FrequenciaNumeral> CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(int qntNumerosAnalisar);
     }
 }

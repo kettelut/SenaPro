@@ -73,16 +73,48 @@
                 <tr>
                   <th>Quantidade de Números</th>
                   <th>Quantidade Máxima de Sorteios Anteriores</th>
-                  <th>Quantidade Média de Sorteios Anteriores</th>
+                  <th>Quantidade Média Simples de Sorteios Anteriores</th>
                   <th>Quantidade Mínima de Sorteios Anteriores</th>
+                  <th>Frequencia de Sorteios Anteriores</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let resultado of sorteiosAnterioresParaLocalizarNumeros">
-                  <td>{{ resultado.qntDeNumeros }}</td>
-                  <td>{{ resultado.qntMaximaDeSorteios }}</td>
-                  <td>{{ resultado.qntMediaDeSorteios }}</td>
-                  <td>{{ resultado.qntMinimaDeSorteios }}</td>
+                  <td>
+                    <ul class="list-group">
+                      <li class="list-group-item">
+                        {{ resultado.qntDeNumeros }}
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <ul class="list-group">
+                      <li class="list-group-item">
+                        {{ resultado.qntMaximaDeSorteios }}
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <ul class="list-group">
+                      <li class="list-group-item">
+                        {{ resultado.qntMediaDeSorteios }}
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <ul class="list-group">
+                      <li class="list-group-item">
+                        {{ resultado.qntMinimaDeSorteios }}
+                      </li>
+                    </ul>
+                  </td>
+                  <td>
+                    <ul class="list-group">
+                      <li *ngFor="let freq of resultado.frequenciaNumeral" class="list-group-item">
+                        {{ freq.numero }} ({{ freq.frequencia }} vezes)
+                      </li>
+                    </ul>
+                  </td>
                 </tr>
               </tbody>
             </table>

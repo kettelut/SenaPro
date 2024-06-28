@@ -171,6 +171,7 @@ namespace SenaPro.Domain.Services
         public double CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(int qntNumerosAnalisar)
         {
             List<int> resultados = CalcularSorteiosNecessarios(qntNumerosAnalisar);
+
             var resultadosValidos = resultados.Where(r => r > 0).ToList();
 
             if (resultadosValidos.Any())
@@ -178,6 +179,23 @@ namespace SenaPro.Domain.Services
                 return resultadosValidos.Average();
             }
             return 0;
+        }
+
+        /// <summary>
+        /// Calcula a frequencia de sorteios anteriores necessários para localizar uma quantidade específica de números.
+        /// </summary>
+        /// <param name="qntNumerosAnalisar">A quantidade de números a serem analisados.</param>
+        /// <returns>A frequencia de sorteios anteriores necessários para localizar a quantidade específica de números.</returns>
+        public List<FrequenciaNumeral> CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(int qntNumerosAnalisar)
+        {
+            List<int> resultados = CalcularSorteiosNecessarios(qntNumerosAnalisar);
+            List<int> resultadosFiltrados = resultados.Where(r => r > 0).ToList();
+
+            return resultadosFiltrados
+                .GroupBy(n => n)
+                .Select(g => new FrequenciaNumeral { Numero = g.Key, Frequencia = g.Count() })
+                .OrderByDescending(fn => fn.Frequencia)
+                .ToList();
         }
 
         /// <summary>
@@ -232,44 +250,49 @@ namespace SenaPro.Domain.Services
                 .SelectMany(s => s)
                 .ToList();
 
+            int qntSorteios6Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(6).Take(12).Select(x => x.Numero).Max();
             var ultimosSorteios6Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(6)))
+                .Take(qntSorteios6Numeros)
                 .Select(s => s.NumerosSorteados)
                 .SelectMany(s => s)
                 .ToList();
 
+            int qntSorteios5Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(5).Take(10).Select(x => x.Numero).Max();
             var ultimosSorteios5Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(5)))
+                .Take(qntSorteios5Numeros)
                 .Select(s => s.NumerosSorteados)
                 .SelectMany(s => s)
                 .ToList();
 
+            int qntSorteios4Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(4).Take(8).Select(x => x.Numero).Max();
             var ultimosSorteios4Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(4)))
+                .Take(qntSorteios4Numeros)
                 .Select(s => s.NumerosSorteados)
                 .SelectMany(s => s)
                 .ToList();
 
+            int qntSorteios3Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(3).Take(6).Select(x => x.Numero).Max();
             var ultimosSorteios3Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(3)))
+                .Take(qntSorteios3Numeros)
                 .Select(s => s.NumerosSorteados)
                 .SelectMany(s => s)
                 .ToList();
 
+            int qntSorteios2Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(2).Take(4).Select(x => x.Numero).Max();
             var ultimosSorteios2Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(2)))
+                .Take(qntSorteios2Numeros)
                 .Select(s => s.NumerosSorteados)
                 .SelectMany(s => s)
                 .ToList();
 
+            int qntSorteios1Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(1).Take(2).Select(x => x.Numero).Max();
             var ultimosSorteios1Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularMediaDeSorteiosAnterioresParaLocalizarQntNumeros(1)))
+                .Take(qntSorteios1Numeros)
                 .Select(s => s.NumerosSorteados)
                 .SelectMany(s => s)
                 .ToList();
 
             int numeroDeSimulacoes = 1000000; // Número de simulações de Monte Carlo
-            List<int> numerosSugeridos = new List<int>();
             Random random = new Random();
             bool numerosSugeridosValidos = false;
 
@@ -278,7 +301,7 @@ namespace SenaPro.Domain.Services
                 var resultadosSimulacao = SimularSorteios(numeroDeSimulacoes);
                 var frequenciaNumeros = CalcularFrequencia(resultadosSimulacao);
 
-                numerosSugeridos = frequenciaNumeros
+                List<int> numerosSugeridos = frequenciaNumeros
                     .OrderByDescending(kv => kv.Value)
                     .ThenBy(kv => random.Next()) // Adiciona aleatoriedade na seleção dos números
                     .Take(qntNumerosPrevisao)
@@ -292,14 +315,13 @@ namespace SenaPro.Domain.Services
                 List<bool> validacoes = new List<bool>();
                 foreach(List<int> combinacao in resultado)
                 {
-                    bool validaRepeticao = !conjuntosSorteados.Contains(string.Join("-", combinacao.OrderBy(n => n)));
-                    bool valida6Numeros = combinacao.Count(num => ultimosSorteios6Numeros.Contains(num)) == 6;
-                    bool valida5Numeros = combinacao.Count(num => ultimosSorteios5Numeros.Contains(num)) == 5;
-                    bool valida4Numeros = combinacao.Count(num => ultimosSorteios4Numeros.Contains(num)) == 4;
-                    bool valida3Numeros = combinacao.Count(num => ultimosSorteios3Numeros.Contains(num)) == 3;
-                    bool valida2Numeros = combinacao.Count(num => ultimosSorteios2Numeros.Contains(num)) == 2;
-                    bool valida1Numeros = combinacao.Count(num => ultimosSorteios1Numeros.Contains(num)) == 1;
-                    validacoes.Add(validaRepeticao && valida6Numeros && valida5Numeros && valida4Numeros && valida3Numeros && valida2Numeros && valida1Numeros);
+                    validacoes.Add(!conjuntosSorteados.Contains(string.Join("-", combinacao.OrderBy(n => n))));
+                    validacoes.Add(combinacao.Count(num => ultimosSorteios6Numeros.Contains(num)) == 6);
+                    validacoes.Add(combinacao.Count(num => ultimosSorteios5Numeros.Contains(num)) == 5);
+                    validacoes.Add(combinacao.Count(num => ultimosSorteios4Numeros.Contains(num)) == 4);
+                    validacoes.Add(combinacao.Count(num => ultimosSorteios3Numeros.Contains(num)) == 3);
+                    validacoes.Add(combinacao.Count(num => ultimosSorteios2Numeros.Contains(num)) == 2);
+                    validacoes.Add(combinacao.Count(num => ultimosSorteios1Numeros.Contains(num)) == 1);
                 }
 
                 numerosSugeridosValidos = numerosSugeridos.Count(num => ultimosSorteiosTodosNumeros.Contains(num)) == qntNumerosPrevisao && (!validacoes.Exists(x => x == false));

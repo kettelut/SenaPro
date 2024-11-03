@@ -94,6 +94,32 @@ namespace SenaPro.Domain.Services
             return frequenciaNumeros.TakeLast(5).ToList();
         }
 
+        public List<FrequenciaNumeral> ObterDezSomaNumerosMaisSorteados()
+        {
+            var frequenciaNumeros = ObterFrequenciaSomaNumeros();
+            return frequenciaNumeros.Take(10).ToList();
+        }
+
+        public List<FrequenciaNumeral> ObterTopSomaNumerosSorteiosAteMetade()
+        {
+            var frequenciaNumeros = ObterFrequenciaSomaNumeros();
+            var response = new List<FrequenciaNumeral>();
+            int contador = 0;
+            while (contador <= (_sorteios.Count * 0.45))
+            {
+                contador += frequenciaNumeros[0].Frequencia;
+                response.Add(frequenciaNumeros[0]);
+                frequenciaNumeros.Remove(frequenciaNumeros[0]);
+            }    
+            return response;
+        }
+      
+        public List<FrequenciaNumeral> ObterDezSomaNumerosMenosSorteados()
+        {
+            var frequenciaNumeros = ObterFrequenciaSomaNumeros();
+            return frequenciaNumeros.TakeLast(10).ToList();
+        }
+
         /// <summary>
         /// Obtém os 5 pares de números que mais frequentemente aparecem juntos nos sorteios.
         /// </summary>
@@ -228,11 +254,92 @@ namespace SenaPro.Domain.Services
                 response.Add(numerosSugeridos);
             }
 
-            return response;
+            return response.OrderBy(lista => lista.Sum()).ToList();
         }
         #endregion
 
         #region Métodos Privados
+        private List<int> ObtemUltimosSorteios(int qntNumeros)
+        {
+            var frequenciaNumeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(qntNumeros);
+            var response = new List<FrequenciaNumeral>();
+            int contador = 0;
+            while (contador <= (_sorteios.Count * 0.45))
+            {
+                contador += frequenciaNumeros[0].Frequencia;
+                response.Add(frequenciaNumeros[0]);
+                frequenciaNumeros.Remove(frequenciaNumeros[0]);
+            }
+            
+            int qntSorteios = response.Select(x => x.Numero).Max();
+            return _sorteios.OrderByDescending(s => s.NumeroConcurso)
+                .Take(qntSorteios)
+                .Select(s => s.NumerosSorteados)
+                .SelectMany(s => s)
+                .Distinct()
+                .ToList();
+        }
+
+        // Método para calcular a porcentagem de sorteios com X números pares
+        private Dictionary<int, double> CalcularPorcentagemNumerosPares()
+        {
+            var contagemPares = new Dictionary<int, int>();
+
+            // Inicializa o dicionário com as chaves de 0 a 6 (quantidade de pares possíveis)
+            for (int i = 0; i <= 6; i++)
+            {
+                contagemPares[i] = 0;
+            }
+
+            // Itera sobre cada sorteio e conta a quantidade de números pares sorteados
+            foreach (var sorteio in _sorteios)
+            {
+                int qtdPares = sorteio.NumerosSorteados.Count(n => n % 2 == 0);
+                contagemPares[qtdPares]++;
+            }
+
+            // Calcula a porcentagem de sorteios com 0 a 6 números pares
+            var porcentagensPares = new Dictionary<int, double>();
+            int totalSorteios = _sorteios.Count;
+
+            foreach (var item in contagemPares)
+            {
+                porcentagensPares[item.Key] = (item.Value / (double)totalSorteios) * 100;
+            }
+
+            return porcentagensPares;
+        }
+
+        // Método para calcular a porcentagem de sorteios com X números ímpares
+        private Dictionary<int, double> CalcularPorcentagemNumerosImpares()
+        {
+            var contagemImpares = new Dictionary<int, int>();
+
+            // Inicializa o dicionário com as chaves de 0 a 6 (quantidade de ímpares possíveis)
+            for (int i = 0; i <= 6; i++)
+            {
+                contagemImpares[i] = 0;
+            }
+
+            // Itera sobre cada sorteio e conta a quantidade de números ímpares sorteados
+            foreach (var sorteio in _sorteios)
+            {
+                int qtdImpares = sorteio.NumerosSorteados.Count(n => n % 2 != 0);
+                contagemImpares[qtdImpares]++;
+            }
+
+            // Calcula a porcentagem de sorteios com 0 a 6 números ímpares
+            var porcentagensImpares = new Dictionary<int, double>();
+            int totalSorteios = _sorteios.Count;
+
+            foreach (var item in contagemImpares)
+            {
+                porcentagensImpares[item.Key] = (item.Value / (double)totalSorteios) * 100;
+            }
+
+            return porcentagensImpares;
+        }
+
         /// <summary>
         /// Gera uma lista de números sugeridos com base em simulações de sorteios anteriores e na frequência de ocorrência
         /// dos números sorteados, utilizando o método de Monte Carlo.
@@ -244,88 +351,73 @@ namespace SenaPro.Domain.Services
         {
             var conjuntosSorteados = new HashSet<string>(numerosSorteados.Select(s => string.Join("-", s.OrderBy(n => n))));
 
-            var ultimosSorteiosTodosNumeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(Convert.ToInt32(CalcularQntMaximaDeSorteiosAnterioresParaLocalizarQntNumeros(6)))
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
+            List<int> somasMedidas = ObterTopSomaNumerosSorteiosAteMetade().Select(x => x.Numero).ToList();
 
-            int qntSorteios6Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(6).Take(12).Select(x => x.Numero).Max();
-            var ultimosSorteios6Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(qntSorteios6Numeros)
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
-
-            int qntSorteios5Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(5).Take(10).Select(x => x.Numero).Max();
-            var ultimosSorteios5Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(qntSorteios5Numeros)
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
-
-            int qntSorteios4Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(4).Take(8).Select(x => x.Numero).Max();
-            var ultimosSorteios4Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(qntSorteios4Numeros)
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
-
-            int qntSorteios3Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(3).Take(6).Select(x => x.Numero).Max();
-            var ultimosSorteios3Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(qntSorteios3Numeros)
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
-
-            int qntSorteios2Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(2).Take(4).Select(x => x.Numero).Max();
-            var ultimosSorteios2Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(qntSorteios2Numeros)
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
-
-            int qntSorteios1Numeros = CalcularFrequenciaDeSorteiosAnterioresParaLocalizarQntNumeros(1).Take(2).Select(x => x.Numero).Max();
-            var ultimosSorteios1Numeros = _sorteios.OrderByDescending(s => s.NumeroConcurso)
-                .Take(qntSorteios1Numeros)
-                .Select(s => s.NumerosSorteados)
-                .SelectMany(s => s)
-                .ToList();
+            var ultimosSorteios6Numeros = ObtemUltimosSorteios(6);
+            var ultimosSorteios5Numeros = ObtemUltimosSorteios(5);
+            var ultimosSorteios4Numeros = ObtemUltimosSorteios(4);
+            var ultimosSorteios3Numeros = ObtemUltimosSorteios(3);
+            var ultimosSorteios2Numeros = ObtemUltimosSorteios(2);
+            var ultimosSorteios1Numeros = ObtemUltimosSorteios(1);
 
             int numeroDeSimulacoes = 1000000; // Número de simulações de Monte Carlo
             Random random = new Random();
             bool numerosSugeridosValidos = false;
+            List<int> numerosSugeridos = new List<int>();
 
             while (!numerosSugeridosValidos)
             {
                 var resultadosSimulacao = SimularSorteios(numeroDeSimulacoes);
                 var frequenciaNumeros = CalcularFrequencia(resultadosSimulacao);
 
-                List<int> numerosSugeridos = frequenciaNumeros
+                numerosSugeridos = frequenciaNumeros
                     .OrderByDescending(kv => kv.Value)
-                    .ThenBy(kv => random.Next()) // Adiciona aleatoriedade na seleção dos números
                     .Take(qntNumerosPrevisao)
                     .Select(kv => kv.Key)
                     .OrderBy(n => n)
                     .ToList();
 
+                List<bool> validacoesObtrigatorias = new List<bool>();
+                List<bool> validacoesOpcionais = new List<bool>();
+
                 var combinacoes = new Combinacoes();
                 var resultado = combinacoes.CalculaCombinacoes(numerosSugeridos, 6);
 
-                List<bool> validacoes = new List<bool>();
-                foreach(List<int> combinacao in resultado)
+                foreach (List<int> combinacao in resultado)
                 {
-                    validacoes.Add(!conjuntosSorteados.Contains(string.Join("-", combinacao.OrderBy(n => n))));
-                    validacoes.Add(combinacao.Count(num => ultimosSorteios6Numeros.Contains(num)) == 6);
-                    validacoes.Add(combinacao.Count(num => ultimosSorteios5Numeros.Contains(num)) == 5);
-                    validacoes.Add(combinacao.Count(num => ultimosSorteios4Numeros.Contains(num)) == 4);
-                    validacoes.Add(combinacao.Count(num => ultimosSorteios3Numeros.Contains(num)) == 3);
-                    validacoes.Add(combinacao.Count(num => ultimosSorteios2Numeros.Contains(num)) == 2);
-                    validacoes.Add(combinacao.Count(num => ultimosSorteios1Numeros.Contains(num)) == 1);
+                    // Sorteios Repetido
+                    validacoesObtrigatorias.Add(!conjuntosSorteados.Contains(string.Join("-", combinacao.OrderBy(n => n))));
+
+                    // Sorteios Anteriores
+                    validacoesOpcionais.Add(combinacao.Count(num => ultimosSorteios6Numeros.Contains(num)) == 6);
+                    validacoesOpcionais.Add(combinacao.Count(num => ultimosSorteios5Numeros.Contains(num)) == 5);
+                    validacoesOpcionais.Add(combinacao.Count(num => ultimosSorteios4Numeros.Contains(num)) == 4);
+                    validacoesOpcionais.Add(combinacao.Count(num => ultimosSorteios3Numeros.Contains(num)) == 3);
+                    validacoesOpcionais.Add(combinacao.Count(num => ultimosSorteios2Numeros.Contains(num)) == 2);
+
+                    // Somatórias 
+                    validacoesObtrigatorias.Add(somasMedidas.Contains(combinacao.Sum()));
+
+                    // Balanço entre par e impar
+                    var qntPares = combinacao.Count(num => num % 2 == 0);
+                    var qntImpares = combinacao.Count(num => num % 2 != 0);
+                    validacoesObtrigatorias.Add(qntPares >= 2 && qntPares <= 4);
+                    validacoesObtrigatorias.Add(qntImpares >= 2 && qntImpares <= 4);
                 }
 
-                numerosSugeridosValidos = numerosSugeridos.Count(num => ultimosSorteiosTodosNumeros.Contains(num)) == qntNumerosPrevisao && (!validacoes.Exists(x => x == false));
- 
+                validacoesObtrigatorias.Add(numerosSugeridos.Count(num => ultimosSorteios6Numeros.Contains(num)) == qntNumerosPrevisao);
+                validacoesObtrigatorias.Add(numerosSugeridos.Count(num => ultimosSorteios1Numeros.Contains(num)) == 1);
+
+                // Valida
+                if(qntNumerosPrevisao == 6)
+                {
+                    numerosSugeridosValidos = validacoesObtrigatorias.TrueForAll(x => x) && validacoesOpcionais.TrueForAll(x => x);
+                }
+                else 
+                {
+                    numerosSugeridosValidos = validacoesObtrigatorias.TrueForAll(x => x) && validacoesOpcionais.Where(x => x == true).Count() >= 27;
+                }
+                
             }
 
             return numerosSugeridos;
@@ -436,6 +528,20 @@ namespace SenaPro.Domain.Services
         {
             return _sorteios
                 .SelectMany(s => s.NumerosSorteados)
+                .GroupBy(n => n)
+                .Select(g => new FrequenciaNumeral { Numero = g.Key, Frequencia = g.Count() })
+                .OrderByDescending(fn => fn.Frequencia)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Obtém a frequência da soma de todos os números sorteados.
+        /// </summary>
+        /// <returns>Uma lista de FrequenciaNumeral contendo todas as somas dos números sorteados e suas frequências.</returns>
+        private List<FrequenciaNumeral> ObterFrequenciaSomaNumeros()
+        {
+            return _sorteios
+                .Select(s => s.SomaNumeros)
                 .GroupBy(n => n)
                 .Select(g => new FrequenciaNumeral { Numero = g.Key, Frequencia = g.Count() })
                 .OrderByDescending(fn => fn.Frequencia)

@@ -34,6 +34,12 @@ namespace SenaPro.Application.Interfaces
         /// <returns>Uma lista de FrequenciaNumeral contendo os cinco números menos sorteados.</returns>
         List<FrequenciaNumeral> ObterCincoNumerosMenosSorteados();
 
+        List<FrequenciaNumeral> ObterDezSomaNumerosMaisSorteados();
+
+        List<FrequenciaNumeral> ObterDezSomaNumerosMenosSorteados();
+
+        List<FrequenciaNumeral> ObterTopSomaNumerosSorteiosAteMetade();
+
         /// <summary>
         /// Obtém os 5 pares de números que mais frequentemente aparecem juntos nos sorteios.
         /// </summary>

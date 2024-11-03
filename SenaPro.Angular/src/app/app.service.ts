@@ -37,4 +37,9 @@ export class AppService {
   getObterSugetaoParaProximoSorteio(qntNumerosPorJogo: number, qntDeJogos: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/ObterSugetaoParaProximoSorteio?qntNumerosPorJogo=${qntNumerosPorJogo}&qntDeJogos=${qntDeJogos}`);
   }
+
+  getObterSomasMaisSorteados(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/ObterSomasMaisSorteados`);
+  }
+
 }

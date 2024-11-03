@@ -22,6 +22,8 @@ export class AppComponent implements OnInit {
   title: string = 'senapro'; // Title
   activeTab: string = 'analise'; // Tab ativa inicial
 
+  numerosDistintosComContagem: Array<{ numero: number; quantidade: number }> = [];
+
   // Propriedades para o gerador de números
   qntNumerosPorJogo: number = 6;
   qntDeJogos: number = 1;
@@ -140,6 +142,8 @@ export class AppComponent implements OnInit {
         // Calcular a quantidade de números distintos
         const numerosDistintos = this.calcularNumerosDistintos(this.numerosGerados);
 
+        this.numerosDistintosComContagem = this.obterNumerosDistintosComContagem(this.numerosGerados);
+
         // Atribuir a quantidade de números distintos à propriedade qntNumerosdistintos
         this.qntNumerosdistintos = numerosDistintos;
 
@@ -166,5 +170,21 @@ export class AppComponent implements OnInit {
 
     // Retornar o tamanho do conjunto, que representa a quantidade de números distintos
     return numerosUnicos.size;
+  }
+
+  obterNumerosDistintosComContagem(numeros: number[][]): Array<{ numero: number; quantidade: number }> {
+    const contadorNumeros: { [key: number]: number } = {};
+
+    // Contar a quantidade de vezes que cada número aparece
+    numeros.forEach(jogo => {
+      jogo.forEach(numero => {
+        contadorNumeros[numero] = (contadorNumeros[numero] || 0) + 1;
+      });
+    });
+
+    // Retornar um array de objetos ordenados pelo valor da contagem em ordem decrescente
+    return Object.entries(contadorNumeros)
+      .map(([numero, contagem]) => ({ numero: parseInt(numero), quantidade: contagem }))
+      .sort((a, b) => b.quantidade - a.quantidade);
   }
 }

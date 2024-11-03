@@ -58,6 +58,21 @@ namespace SenaPro.Application.Services
             return _senaProService.ObterCincoNumerosMenosSorteados();
         }
 
+        public List<FrequenciaNumeral> ObterDezSomaNumerosMaisSorteados()
+        {
+            return _senaProService.ObterDezSomaNumerosMaisSorteados();
+        }
+
+        public List<FrequenciaNumeral> ObterDezSomaNumerosMenosSorteados()
+        {
+            return _senaProService.ObterDezSomaNumerosMenosSorteados();
+        }
+
+        public List<FrequenciaNumeral> ObterTopSomaNumerosSorteiosAteMetade()
+        {
+            return _senaProService.ObterTopSomaNumerosSorteiosAteMetade();
+        }
+
         /// <summary>
         /// Obtém os 5 pares de números que mais frequentemente aparecem juntos nos sorteios.
         /// </summary>

@@ -70,6 +70,19 @@ namespace SenaPro.API.Controllers
             return Ok(result);
         }
 
+        [HttpGet("ObterSomasMaisSorteados")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<FrequenciaNumeral>))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public IActionResult ObterSomasMaisSorteados()
+        {
+            _logger.LogInformation($@"Obtém os top soma números mais sorteados da Mega-Sena.");
+            var result = _SenaProAppService.ObterTopSomaNumerosSorteiosAteMetade();
+            return Ok(result);
+        }
+
         [HttpGet("ParesDeNumerosQueMaisAparecemJuntos")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(List<ParesNumerais>))]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

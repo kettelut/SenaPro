@@ -42,6 +42,7 @@ namespace SenaPro.Infra.Repositories
                     sorteio.NumerosSorteados.Add(Convert.ToInt32(row.Cell(i + 3).Value.ToString().Replace("Number", "")));
                 
                 sorteio.HouveGanhadores = !Convert.ToInt32(row.Cell(9).Value.ToString().Replace("Number", "")).Equals(0);
+                sorteio.SomaNumeros = sorteio.NumerosSorteados.Sum();
                 response.Add(sorteio);
             }
 

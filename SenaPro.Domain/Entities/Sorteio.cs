@@ -32,5 +32,7 @@
         { 
             NumerosSorteados = new List<int>();
         }
+
+        public int SomaNumeros {  get; set; }
     }
 }

@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="SenaPro.API/SenaPro.API.csproj" />
+  <Project Path="SenaPro.Application/SenaPro.Application.csproj" />
+  <Project Path="SenaPro.Domain/SenaPro.Domain.csproj" />
+  <Project Path="SenaPro.Infrastructure/SenaPro.Infrastructure.csproj" />
+  <Project Path="SenaPro.Tests/SenaPro.Tests.csproj" />
+</Solution>

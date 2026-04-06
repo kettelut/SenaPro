@@ -12,9 +12,48 @@ O SenaPro importa o histórico completo de sorteios da Mega-Sena, analisa padrõ
 
 ## Funcionalidades
 
-- **Histórico de sorteios** — importação do arquivo Excel oficial da Caixa Econômica Federal e atualização automática via API
-- **Análise estatística** — frequência, atraso, números quentes e frios, e análise de pares/trios
-- **Gerador de jogos** — criação de jogos balanceados com base em padrões configuráveis (quentes/frios, pares/ímpares, faixas numéricas)
+### 1. Atualização da Base de Dados
+
+O sistema oferece duas formas de manter o histórico de sorteios atualizado:
+
+#### 1.1 Importação de Excel com Base Histórica
+- Importa o arquivo Excel oficial da Caixa Econômica Federal
+- Valida se as informações do Excel correspondem às já existentes no banco
+- Adiciona apenas os novos registros não existentes na base
+
+#### 1.2 Atualização via API
+- Consulta automaticamente a API oficial da loteria
+- Compara o resultado retornado com o último sorteio armazenado
+- Se identificado um gap (sorteios faltantes entre o último armazenado e o atual), o sistema alerta o usuário para importar o histórico completo
+
+---
+
+### 2. Análise Estatística
+
+Análise de padrões e frequências dos números sorteados ao longo do tempo:
+
+- **2.1 Sorteios Repetidos** — identifica se existem sorteios com os mesmos números sorteados, independentemente da ordem
+
+---
+
+### 3. Gerador de Sugestões de Jogos
+
+Gera sugestões de jogos com base em parâmetros configuráveis:
+
+- Seleção de quais análises estatísticas devem ser respeitadas
+- Definição da quantidade de números por jogo
+- Definição da quantidade de jogos a gerar
+- Exemplo: se selecionada a análise "Sorteios Repetidos" e a base não contém sorteios repetidos, os jogos sugeridos não repetirão padrões históricos
+
+---
+
+## Metodologia de Desenvolvimento
+
+Este projeto é desenvolvido utilizando **TDD (Test-Driven Development)**:
+
+1. **Red** — Escrever um teste que falha
+2. **Green** — Implementar o mínimo para fazer o teste passar
+3. **Refactor** — Melhorar o código mantendo os testes passando
 
 ---
 
@@ -22,7 +61,7 @@ O SenaPro importa o histórico completo de sorteios da Mega-Sena, analisa padrõ
 
 | Camada | Tecnologia |
 |---|---|
-| Backend | ASP.NET Core (.NET 9) |
+| Backend | ASP.NET Core (.NET 8) |
 | Frontend | Angular (LTS) |
 | Banco de dados | PostgreSQL |
 | ORM | Entity Framework Core + Npgsql |
@@ -43,14 +82,16 @@ SenaPro/
 ├── SenaPro.Application/      # Casos de uso, services e DTOs
 ├── SenaPro.Infrastructure/   # EF Core, repositórios e integrações externas
 ├── SenaPro.Tests/            # Testes unitários
-└── sena-pro-frontend/        # Projeto Angular
+├── sena-pro-frontend/        # Projeto Angular
+├── docker-compose.yml       # Orquestração dos containers
+└── .dockerignore             # Arquivos ignorados no build Docker
 ```
 
 ---
 
 ## Pré-requisitos
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download)
 - [Node.js LTS](https://nodejs.org) + Angular CLI (`npm install -g @angular/cli`)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
@@ -58,7 +99,28 @@ SenaPro/
 
 ## Como Executar
 
-### 1. Banco de dados
+### Opção 1: Docker Compose (Recomendado)
+
+Executa todos os serviços com um único comando:
+
+```bash
+docker-compose up -d
+```
+
+Serviços disponíveis:
+- **Frontend**: http://localhost:4200
+- **API**: http://localhost:5000
+- **Swagger**: http://localhost:5000/swagger
+- **PostgreSQL**: localhost:5432
+
+Para parar os serviços:
+```bash
+docker-compose down
+```
+
+### Opção 2: Execução Local
+
+#### 1. Banco de dados
 
 ```bash
 docker run --name senapro-db \
@@ -69,7 +131,7 @@ docker run --name senapro-db \
   -d postgres
 ```
 
-### 2. API
+#### 2. API
 
 ```bash
 cd SenaPro.API
@@ -81,7 +143,7 @@ dotnet run
 A API estará disponível em `http://localhost:5000`.
 Documentação Swagger em `http://localhost:5000/swagger`.
 
-### 3. Frontend
+#### 3. Frontend
 
 ```bash
 cd sena-pro-frontend

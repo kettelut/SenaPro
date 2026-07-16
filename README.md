@@ -83,7 +83,7 @@ SenaPro/
 ├── SenaPro.Infrastructure/   # EF Core, repositórios e integrações externas
 ├── SenaPro.Tests/            # Testes unitários
 ├── sena-pro-frontend/        # Projeto Angular
-├── docker-compose.yml       # Orquestração dos containers
+├── docker-compose.yml        # Orquestração dos containers
 └── .dockerignore             # Arquivos ignorados no build Docker
 ```
 
@@ -176,22 +176,6 @@ As configurações da aplicação ficam em `SenaPro.API/appsettings.json`:
     "IntervalMinutes": 60
   }
 }
-```
-
----
-
-## Desenvolvimento com Claude Code + Ollama
-
-Este projeto foi desenvolvido com auxílio do [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) integrado ao [Ollama](https://ollama.com) com o modelo `glm-4.7-flash` rodando localmente.
-
-Para iniciar o ambiente de desenvolvimento:
-
-```powershell
-# Terminal 1 — inicia o Ollama
-ollama serve
-
-# Terminal 2 — inicia o Claude Code
-ollama launch claude --model glm-4.7-flash
 ```
 
 ---

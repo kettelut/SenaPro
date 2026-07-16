@@ -1,0 +1,128 @@
+<div class="gerador-container">
+  <div class="page-header">
+    <h1>Gerador de Sugestões Estatísticas</h1>
+    <p>Gere novas combinações de números baseando-se em filtros matemáticos e evite dezenas repetidas na história.</p>
+  </div>
+
+  <div class="gerador-split">
+    <!-- Configurações de Geração -->
+    <div class="card config-card">
+      <div class="card-title">
+        <span>⚙️</span> Parâmetros da Aposta
+      </div>
+      
+      <div class="form-group">
+        <label for="quantidadeNumeros">Dezenas por Jogo</label>
+        <span class="field-hint">A aposta padrão possui 6 dezenas. É possível apostar até 15 números (surpresinha estendida).</span>
+        <select 
+          id="quantidadeNumeros" 
+          [(ngModel)]="quantidadeNumeros" 
+          class="form-control"
+        >
+          <option *ngFor="let opt of opcoesDezenas" [value]="opt">
+            {{ opt }} Dezenas {{ opt === 6 ? '(Padrão)' : '' }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="quantidadeJogos">Quantidade de Jogos</label>
+        <span class="field-hint">Defina a quantidade de cartões que deseja gerar.</span>
+        <input 
+          id="quantidadeJogos" 
+          type="number" 
+          [(ngModel)]="quantidadeJogos" 
+          min="1" 
+          max="50" 
+          class="form-control"
+        >
+      </div>
+
+      <div class="form-group">
+        <label>Filtros Estatísticos Ativos</label>
+        <span class="field-hint">Filtros que as dezenas geradas devem respeitar rigorosamente.</span>
+        
+        <div class="checkbox-container">
+          <label class="checkbox-label" [class.disabled]="loadingAnalises()">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="evitarRepetidos" 
+              [disabled]="loadingAnalises()"
+            >
+            <div class="checkbox-box"></div>
+            <div class="checkbox-text">
+              <strong>Evitar Sorteios Repetidos</strong>
+              <p>Garante que a aposta gerada nunca foi sorteada de forma idêntica no histórico da Mega-Sena.</p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <button 
+        class="btn btn-primary btn-block" 
+        (click)="gerar()" 
+        [disabled]="gerando() || quantidadeJogos() < 1"
+      >
+        <div *ngIf="gerando()" class="spinner spinner-btn"></div>
+        Gerar Jogos Inteligentes
+      </button>
+    </div>
+
+    <!-- Resultados -->
+    <div class="card resultado-card">
+      <div class="resultado-header">
+        <div class="card-title">
+          <span>🎯</span> Jogos Sugeridos
+        </div>
+        <button 
+          *ngIf="resultado()?.jogos && resultado()!.jogos.length > 0" 
+          class="btn btn-secondary btn-sm"
+          (click)="copiarTodos()"
+        >
+          📋 Copiar Todos
+        </button>
+      </div>
+
+      <!-- State: Aguardando Geração -->
+      <div *ngIf="!resultado() && !gerando()" class="empty-state">
+        <span class="empty-icon">🎲</span>
+        <h3>Aguardando Geração</h3>
+        <p>Defina as opções ao lado e clique em <strong>"Gerar Jogos Inteligentes"</strong> para receber as sugestões baseadas nos filtros.</p>
+      </div>
+
+      <!-- State: Carregando -->
+      <div *ngIf="gerando()" class="loading-state">
+        <div class="spinner"></div>
+        <p>Gerando combinações exclusivas e validando contra histórico...</p>
+      </div>
+
+      <!-- State: Resultados Gerados -->
+      <div *ngIf="resultado() && !gerando()" class="jogos-lista">
+        <div class="alert-box success">
+          <span>✓</span> {{ resultado()?.mensagem }}
+        </div>
+
+        <div class="jogos-scroll">
+          <div *ngFor="let jogo of resultado()?.jogos" class="jogo-item">
+            <div class="jogo-meta">
+              <span class="jogo-numero">Jogo #{{ jogo.id }}</span>
+              <button class="btn-icon-copy" (click)="copiarJogo(jogo)" title="Copiar Jogo">
+                📋
+              </button>
+            </div>
+            
+            <div class="balls-container">
+              <div 
+                *ngFor="let num of jogo.dezenas; let idx = index" 
+                class="ball anim-ball"
+                [style.animation-delay]="(idx * 50) + 'ms'"
+              >
+                {{ num | number:'2.0' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,8 +1,12 @@
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using SenaPro.Application.Services;
+using SenaPro.Domain.Entities;
 using SenaPro.Domain.Interfaces;
 using SenaPro.Domain.Results;
 using SenaPro.Infrastructure.Data;
+using SenaPro.Infrastructure.Repositories;
+using System.Net;
+using System.Text.Json.Nodes;
 using Xunit;
 
 namespace SenaPro.Tests.Services;
@@ -14,7 +18,10 @@ namespace SenaPro.Tests.Services;
 public class ApiLoteriaServiceTests : IDisposable
 {
     private readonly AppDbContext _context;
-    private readonly IApiLoteriaService _apiLoteriaService;
+    private readonly ISorteioRepository _sorteioRepository;
+    private readonly MockHttpMessageHandler _httpMessageHandler;
+    private readonly HttpClient _httpClient;
+    private readonly ApiLoteriaService _apiLoteriaService;
 
     public ApiLoteriaServiceTests()
     {
@@ -24,10 +31,13 @@ public class ApiLoteriaServiceTests : IDisposable
             .Options;
 
         _context = new AppDbContext(options);
+        _sorteioRepository = new SorteioRepository(_context);
 
-        // TODO: Implementar ApiLoteriaService e injetar aqui
-        // _apiLoteriaService = new ApiLoteriaService(_context, httpClient);
-        _apiLoteriaService = null!; // Falha proposital - Red phase
+        // Configura HttpClient mockável
+        _httpMessageHandler = new MockHttpMessageHandler();
+        _httpClient = new HttpClient(_httpMessageHandler);
+
+        _apiLoteriaService = new ApiLoteriaService(_httpClient, _sorteioRepository);
     }
 
     #region Testes de Consulta
@@ -35,14 +45,17 @@ public class ApiLoteriaServiceTests : IDisposable
     [Fact]
     public async Task ConsultarUltimoSorteioAsync_DeveRetornarSorteioValido()
     {
+        // Arrange - Configura resposta mock da API
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse());
+
         // Act
         var resultado = await _apiLoteriaService.ConsultarUltimoSorteioAsync();
 
         // Assert
-        resultado.Should().NotBeNull("a API deve retornar um sorteio");
-        resultado!.Concurso.Should().BeGreaterThan(0, "concurso deve ser positivo");
-        resultado.Dezenas.Should().HaveCount(6, "deve ter 6 dezenas");
-        resultado.Dezenas.All(d => d >= 1 && d <= 60).Should().BeTrue("dezenas devem estar entre 1 e 60");
+        Assert.NotNull(resultado);
+        Assert.True(resultado!.Concurso > 0, "concurso deve ser positivo");
+        Assert.Equal(6, resultado.Dezenas.Length);
+        Assert.All(resultado.Dezenas, d => Assert.True(d >= 1 && d <= 60));
     }
 
     [Fact]
@@ -50,13 +63,14 @@ public class ApiLoteriaServiceTests : IDisposable
     {
         // Arrange
         var concurso = 2500;
+        _httpMessageHandler.SetResponse(Mocks.ApiSorteioResponse(concurso));
 
         // Act
         var resultado = await _apiLoteriaService.ConsultarSorteioAsync(concurso);
 
         // Assert
-        resultado.Should().NotBeNull("o sorteio deve existir");
-        resultado!.Concurso.Should().Be(concurso, "deve retornar o concurso solicitado");
+        Assert.NotNull(resultado);
+        Assert.Equal(concurso, resultado!.Concurso);
     }
 
     [Fact]
@@ -64,12 +78,13 @@ public class ApiLoteriaServiceTests : IDisposable
     {
         // Arrange
         var concursoInexistente = 9999999;
+        _httpMessageHandler.SetResponse(null, HttpStatusCode.NotFound);
 
         // Act
         var resultado = await _apiLoteriaService.ConsultarSorteioAsync(concursoInexistente);
 
         // Assert
-        resultado.Should().BeNull("concurso inexistente deve retornar null");
+        Assert.Null(resultado);
     }
 
     #endregion
@@ -79,19 +94,22 @@ public class ApiLoteriaServiceTests : IDisposable
     [Fact]
     public async Task VerificarAtualizacoesAsync_DeveRetornarUltimoConcursoDaApi()
     {
+        // Arrange
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse());
+
         // Act
         var resultado = await _apiLoteriaService.VerificarAtualizacoesAsync();
 
         // Assert
-        resultado.Sucesso.Should().BeTrue("deve conseguir verificar atualizações");
-        resultado.UltimoConcursoApi.Should().BeGreaterThan(0, "deve retornar o último concurso da API");
+        Assert.True(resultado.Sucesso);
+        Assert.True(resultado.UltimoConcursoApi > 0);
     }
 
     [Fact]
     public async Task VerificarAtualizacoesAsync_DeveRetornarUltimoConcursoDoBanco()
     {
         // Arrange - Adiciona um sorteio no banco
-        _context.Sorteios.Add(new Domain.Entities.Sorteio
+        _context.Sorteios.Add(new Sorteio
         {
             Concurso = 2500,
             Data = new DateOnly(2024, 1, 1),
@@ -104,18 +122,20 @@ public class ApiLoteriaServiceTests : IDisposable
         });
         await _context.SaveChangesAsync();
 
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2510));
+
         // Act
         var resultado = await _apiLoteriaService.VerificarAtualizacoesAsync();
 
         // Assert
-        resultado.UltimoConcursoBanco.Should().Be(2500, "deve retornar o último concurso do banco");
+        Assert.Equal(2500, resultado.UltimoConcursoBanco);
     }
 
     [Fact]
     public async Task VerificarAtualizacoesAsync_DeveIdentificarGapQuandoExistir()
     {
         // Arrange - Banco com sorteio antigo
-        _context.Sorteios.Add(new Domain.Entities.Sorteio
+        _context.Sorteios.Add(new Sorteio
         {
             Concurso = 2000,
             Data = new DateOnly(2023, 1, 1),
@@ -128,20 +148,24 @@ public class ApiLoteriaServiceTests : IDisposable
         });
         await _context.SaveChangesAsync();
 
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2020));
+
         // Act
         var resultado = await _apiLoteriaService.VerificarAtualizacoesAsync();
 
         // Assert
-        resultado.HaGap.Should().BeTrue("deve identificar gap entre banco e API");
-        resultado.QuantidadeGap.Should().BeGreaterThan(0, "deve informar quantidade de sorteios faltantes");
+        Assert.True(resultado.HaGap);
+        Assert.True(resultado.QuantidadeGap > 0);
     }
 
     [Fact]
     public async Task VerificarAtualizacoesAsync_DeveRetornarSemGapQuandoBancoAtualizado()
     {
         // Arrange - Simula banco atualizado com o último concurso
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2500));
         var ultimoSorteio = await _apiLoteriaService.ConsultarUltimoSorteioAsync();
-        _context.Sorteios.Add(new Domain.Entities.Sorteio
+
+        _context.Sorteios.Add(new Sorteio
         {
             Concurso = ultimoSorteio!.Concurso,
             Data = ultimoSorteio.Data,
@@ -158,8 +182,8 @@ public class ApiLoteriaServiceTests : IDisposable
         var resultado = await _apiLoteriaService.VerificarAtualizacoesAsync();
 
         // Assert
-        resultado.HaGap.Should().BeFalse("não deve haver gap quando banco está atualizado");
-        resultado.QuantidadeGap.Should().Be(0, "quantidade de gap deve ser zero");
+        Assert.False(resultado.HaGap);
+        Assert.Equal(0, resultado.QuantidadeGap);
     }
 
     #endregion
@@ -169,22 +193,22 @@ public class ApiLoteriaServiceTests : IDisposable
     [Fact]
     public async Task AtualizarAsync_DeveInserirNovoSorteio()
     {
-        // Arrange - Banco vazio
-        var verificacao = await _apiLoteriaService.VerificarAtualizacoesAsync();
+        // Arrange - Banco vazio, API com último sorteio
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2500));
 
         // Act
         var resultado = await _apiLoteriaService.AtualizarAsync();
 
         // Assert
-        resultado.Sucesso.Should().BeTrue("atualização deve ser bem-sucedida");
-        resultado.NovosSorteios.Should().BeGreaterThan(0, "deve inserir novos sorteios");
+        Assert.True(resultado.Sucesso);
+        Assert.True(resultado.NovosSorteios > 0);
     }
 
     [Fact]
     public async Task AtualizarAsync_DeveAlertarUsuarioQuandoHouverGap()
     {
         // Arrange - Banco com sorteio antigo (gap grande)
-        _context.Sorteios.Add(new Domain.Entities.Sorteio
+        _context.Sorteios.Add(new Sorteio
         {
             Concurso = 1000,
             Data = new DateOnly(2020, 1, 1),
@@ -197,22 +221,25 @@ public class ApiLoteriaServiceTests : IDisposable
         });
         await _context.SaveChangesAsync();
 
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2500));
+
         // Act
         var resultado = await _apiLoteriaService.AtualizarAsync();
 
         // Assert
-        resultado.HaGap.Should().BeTrue("deve identificar gap");
-        resultado.Mensagem.Should().Contain("importar", "deve sugerir importação do histórico");
+        Assert.True(resultado.HaGap);
+        Assert.Contains("importe", resultado.Mensagem, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public async Task AtualizarAsync_NaoDeveInserirDuplicados()
     {
         // Arrange - Obtém último sorteio da API
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2500));
         var ultimoSorteio = await _apiLoteriaService.ConsultarUltimoSorteioAsync();
 
         // Insere no banco
-        _context.Sorteios.Add(new Domain.Entities.Sorteio
+        _context.Sorteios.Add(new Sorteio
         {
             Concurso = ultimoSorteio!.Concurso,
             Data = ultimoSorteio.Data,
@@ -229,7 +256,7 @@ public class ApiLoteriaServiceTests : IDisposable
         var resultado = await _apiLoteriaService.AtualizarAsync();
 
         // Assert
-        resultado.NovosSorteios.Should().Be(0, "não deve inserir duplicados");
+        Assert.Equal(0, resultado.NovosSorteios);
     }
 
     #endregion
@@ -239,24 +266,27 @@ public class ApiLoteriaServiceTests : IDisposable
     [Fact]
     public async Task ConsultarUltimoSorteioAsync_DeveRetornarMensagemErroQuandoApiIndisponivel()
     {
-        // Este teste seria feito com mock de HTTP client simulando falha
         // Arrange - Simular API indisponível
+        _httpMessageHandler.SetResponse(null, HttpStatusCode.ServiceUnavailable);
 
         // Act
-        var resultado = await _apiLoteriaService.VerificarAtualizacoesAsync();
+        var resultado = await _apiLoteriaService.ConsultarUltimoSorteioAsync();
 
-        // Assert - Quando API disponível, deve ter sucesso
-        resultado.Erros.Should().BeEmpty("API deve estar disponível");
+        // Assert
+        Assert.Null(resultado);
     }
 
     [Fact]
     public async Task AtualizarAsync_DeveRetornarMensagemInformativa()
     {
+        // Arrange
+        _httpMessageHandler.SetResponse(Mocks.ApiUltimoSorteioResponse(2500));
+
         // Act
         var resultado = await _apiLoteriaService.AtualizarAsync();
 
         // Assert
-        resultado.Mensagem.Should().NotBeNullOrEmpty("deve conter mensagem informativa");
+        Assert.False(string.IsNullOrEmpty(resultado.Mensagem));
     }
 
     #endregion
@@ -264,5 +294,72 @@ public class ApiLoteriaServiceTests : IDisposable
     public void Dispose()
     {
         _context.Dispose();
+        _httpClient.Dispose();
+    }
+}
+
+/// <summary>
+/// Mock de HttpMessageHandler para simular respostas da API.
+/// </summary>
+public class MockHttpMessageHandler : HttpMessageHandler
+{
+    private string? _responseContent;
+    private HttpStatusCode _statusCode = HttpStatusCode.OK;
+
+    public void SetResponse(string? content, HttpStatusCode statusCode = HttpStatusCode.OK)
+    {
+        _responseContent = content;
+        _statusCode = statusCode;
+    }
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (_responseContent == null || _statusCode != HttpStatusCode.OK)
+        {
+            return Task.FromResult(new HttpResponseMessage(_statusCode));
+        }
+
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(_responseContent, System.Text.Encoding.UTF8, "application/json")
+        };
+
+        return Task.FromResult(response);
+    }
+}
+
+/// <summary>
+/// Mocks de respostas da API.
+/// </summary>
+public static class Mocks
+{
+    public static string ApiUltimoSorteioResponse(int concurso = 2500)
+    {
+        var json = new JsonObject
+        {
+            ["numero"] = concurso,
+            ["dataApuracao"] = "15/03/2024",
+            ["dezenas"] = new JsonArray { 5, 12, 23, 34, 45, 56 },
+            ["acumulado"] = "false",
+            ["ganhadores6Numeros"] = "1",
+            ["premio6Numeros"] = "150000000,00"
+        };
+
+        return json.ToString();
+    }
+
+    public static string ApiSorteioResponse(int concurso)
+    {
+        var json = new JsonObject
+        {
+            ["numero"] = concurso,
+            ["dataApuracao"] = "01/01/2024",
+            ["dezenas"] = new JsonArray { 1, 10, 20, 30, 40, 50 },
+            ["acumulado"] = "true",
+            ["ganhadores6Numeros"] = "0",
+            ["premio6Numeros"] = "50000000,00"
+        };
+
+        return json.ToString();
     }
 }

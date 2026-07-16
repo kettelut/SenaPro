@@ -1,0 +1,123 @@
+<div class="sorteios-container">
+  <div class="page-header">
+    <h1>Conferência & Auditoria Histórica</h1>
+    <p>Utilize ferramentas estatísticas para verificar a originalidade de suas dezenas ou explorar repetições incomuns no histórico de sorteios.</p>
+  </div>
+
+  <div class="dashboard-split">
+    <!-- Seção 1: Conferidor Interativo -->
+    <div class="card conferidor-card">
+      <div class="card-title">
+        <span>🔍</span> Testar Jogo no Histórico
+      </div>
+      <p class="section-desc">Selecione exatamente <strong>6 dezenas</strong> na grade abaixo para auditar se essa aposta já foi sorteada alguma vez.</p>
+
+      <!-- Grade Numérica 1-60 -->
+      <div class="number-grid">
+        <button 
+          *ngFor="let num of numerosGrade"
+          class="grid-number"
+          [class.selected]="isSelecionado(num)"
+          (click)="toggleDezena(num)"
+          [disabled]="!isSelecionado(num) && dezenasSelecionadas().length >= 6"
+        >
+          {{ num | number:'2.0' }}
+        </button>
+      </div>
+
+      <!-- Barra de Seleção e Ação -->
+      <div class="selection-action-bar">
+        <div class="selection-info">
+          <span>Selecionados:</span>
+          <strong [class.ready]="dezenasSelecionadas().length === 6">
+            {{ dezenasSelecionadas().length }}/6
+          </strong>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-secondary" (click)="limparSelecao()" [disabled]="dezenasSelecionadas().length === 0">
+            Limpar
+          </button>
+          <button class="btn btn-primary" (click)="verificarJogo()" [disabled]="dezenasSelecionadas().length !== 6 || verificando()">
+            <div *ngIf="verificando()" class="spinner spinner-btn"></div>
+            Auditar Combinação
+          </button>
+        </div>
+      </div>
+
+      <!-- Exibição Visual do Jogo Selecionado -->
+      <div class="selected-balls-preview" *ngIf="dezenasSelecionadas().length > 0">
+        <div class="balls-container">
+          <div *ngFor="let num of dezenasSelecionadas()" class="ball">
+            {{ num | number:'2.0' }}
+          </div>
+          <!-- Espaços vazios restantes -->
+          <div *ngFor="let empty of [].constructor(6 - dezenasSelecionadas().length)" class="ball-placeholder">
+            --
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado da Verificação -->
+      <div *ngIf="verificou()" class="verification-result">
+        <div class="alert-box" [class.danger]="jaSorteado()" [class.success]="!jaSorteado()">
+          <div class="result-header">
+            <span class="result-icon">{{ jaSorteado() ? '🚨' : '🎉' }}</span>
+            <span class="result-title">{{ jaSorteado() ? 'Jogo Já Sorteado!' : 'Jogo Inédito!' }}</span>
+          </div>
+          <p class="result-body">{{ resultadoMsg() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Seção 2: Análise de Sorteios Repetidos -->
+    <div class="card repetidos-card">
+      <div class="card-title">
+        <span>🔄</span> Sorteios Históricos Idênticos
+      </div>
+      <p class="section-desc">Esta análise estatística varre todo o banco de dados e identifica se já existiram concursos distintos que compartilharam exatamente a mesma sequência de dezenas.</p>
+
+      <!-- Loading Sorteios Repetidos -->
+      <div *ngIf="loadingRepetidos()" class="loading-box">
+        <div class="spinner"></div>
+        <p>Analisando histórico de concursos...</p>
+      </div>
+
+      <div *ngIf="!loadingRepetidos()">
+        <!-- Caso não existam repetidos -->
+        <div *ngIf="!repetidosResultado()?.existemRepetidos" class="alert-box success">
+          <span>✓</span> <strong>Excelente:</strong> Não foram encontrados registros de sorteios repetidos na história da Mega-Sena. Cada concurso teve dezenas únicas.
+        </div>
+
+        <!-- Caso existam repetidos -->
+        <div *ngIf="repetidosResultado()?.existemRepetidos" class="repetidos-content">
+          <div class="alert-box warning">
+            <span>💡</span> {{ repetidosResultado()?.mensagem }}
+          </div>
+
+          <div class="pairs-list">
+            <div *ngFor="let par of repetidosResultado()?.pares" class="pair-item">
+              <div class="pair-meta">
+                <div class="concurso-ref">
+                  <span class="badge badge-success">Concurso {{ par.concurso1 }}</span>
+                  <span class="draw-date">{{ par.data1 | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="vs-indicator">🤝</div>
+                <div class="concurso-ref">
+                  <span class="badge badge-success">Concurso {{ par.concurso2 }}</span>
+                  <span class="draw-date">{{ par.data2 | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+              <div class="pair-balls">
+                <div class="balls-container small-balls">
+                  <div *ngFor="let num of par.dezenas" class="ball">
+                    {{ num | number:'2.0' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

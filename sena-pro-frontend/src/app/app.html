@@ -1,0 +1,29 @@
+<div class="app-container">
+  <header class="header">
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">🎰</span>
+        <span class="logo-text">Sena<span class="logo-highlight">Pro</span></span>
+      </div>
+      <nav class="nav-links">
+        <a routerLink="/home" routerLinkActive="active-link" class="nav-item">
+          <i class="icon-dashboard">📊</i> Dashboard
+        </a>
+        <a routerLink="/sorteios" routerLinkActive="active-link" class="nav-item">
+          <i class="icon-stats">🔍</i> Conferir & Análise
+        </a>
+        <a routerLink="/gerador" routerLinkActive="active-link" class="nav-item">
+          <i class="icon-generate">⚡</i> Gerador de Jogos
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 SenaPro — Análise Estatística Inteligente da Mega-Sena. Todos os direitos reservados.</p>
+  </footer>
+</div>

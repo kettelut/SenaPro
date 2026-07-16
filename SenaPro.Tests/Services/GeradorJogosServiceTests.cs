@@ -1,9 +1,11 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using SenaPro.Application.Services;
 using SenaPro.Domain.Entities;
 using SenaPro.Domain.Interfaces;
 using SenaPro.Domain.Results;
 using SenaPro.Infrastructure.Data;
+using SenaPro.Infrastructure.Repositories;
 using Xunit;
 
 namespace SenaPro.Tests.Services;
@@ -15,6 +17,8 @@ namespace SenaPro.Tests.Services;
 public class GeradorJogosServiceTests : IDisposable
 {
     private readonly AppDbContext _context;
+    private readonly ISorteioRepository _sorteioRepository;
+    private readonly IAnaliseEstatisticaService _analiseService;
     private readonly IGeradorJogosService _geradorService;
 
     public GeradorJogosServiceTests()
@@ -25,10 +29,9 @@ public class GeradorJogosServiceTests : IDisposable
             .Options;
 
         _context = new AppDbContext(options);
-
-        // TODO: Implementar GeradorJogosService e injetar aqui
-        // _geradorService = new GeradorJogosService(_context, _analiseService);
-        _geradorService = null!; // Falha proposital - Red phase
+        _sorteioRepository = new SorteioRepository(_context);
+        _analiseService = new AnaliseEstatisticaService(_sorteioRepository);
+        _geradorService = new GeradorJogosService(_sorteioRepository, _analiseService);
     }
 
     #region Testes de Geração Básica

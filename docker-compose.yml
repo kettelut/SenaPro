@@ -13,6 +13,37 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U senapro -d senapro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: SenaPro.API/Dockerfile
+    container_name: senapro-api
+    restart: always
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=senapro;Username=senapro;Password=senapro
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./sena-pro-frontend
+      dockerfile: Dockerfile
+    container_name: senapro-frontend
+    restart: always
+    ports:
+      - "4200:80"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:

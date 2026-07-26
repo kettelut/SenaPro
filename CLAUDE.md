@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack & Project Layout
 
-- **.NET 8** target everywhere (`net8.0`) — the README text mentions .NET 9, but csproj files use `net8.0`. Trust the csproj; install the **.NET 8 SDK**, not .NET 9 only.
+- **.NET 8** target everywhere (`net8.0`) — trust the csproj files; all projects use `net8.0`. Install the **.NET 8 SDK**.
 - Multi-project: `SenaPro.slnx`
   - **SenaPro.API** — ASP.NET Core Web API host + Hangfire / Swagger
   - **SenaPro.Application** — use-cases, services, DTOs
@@ -20,9 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Pós-clone (antes de subir os containers)
 
-1. Instalar o **.NET 8 SDK** — NÃO o .NET 9 — [dot.net/download](https://dotnet.microsoft.com/en-us/download).
+1. Instalar o **.NET 8 SDK** — [dot.net/download](https://dotnet.microsoft.com/en-us/download).
 2. Verificar se a imagem `node:20-alpine` está disponível localmente; caso não esteja, executar `docker pull node:20-alpine`.
-3. **Nota sobre a versão do runtime:** o `README.md` original menciona .NET 9 em textos de introdução. Esse texto é obsoleto — todos os csproj usam `<TargetFramework>net8.0</TargetFramework>` (incluindo `.Infrastructure`). Instalar e usar apenas o SDK .NET 8.
 
 ## Commands
 

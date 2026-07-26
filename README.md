@@ -6,7 +6,7 @@ Sistema de análise estatística de jogos da Mega-Sena com gerador de jogos base
 
 ## Visão Geral
 
-O SenaPro importa o histórico completo de sorteios da Mega-Sena, analisa padrões estatísticos e gera sugestões de jogos com base nesses dados. O sistema é composto por uma API REST em .NET 9 e um frontend em Angular.
+O SenaPro importa o histórico completo de sorteios da Mega-Sena, analisa padrões estatísticos e gera sugestões de jogos com base nesses dados. O sistema é composto por uma API REST em ASP.NET Core (.NET 8) e um frontend em Angular (LTS).
 
 ---
 

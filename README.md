@@ -14,17 +14,12 @@ O SenaPro importa o histórico completo de sorteios da Mega-Sena, analisa padrõ
 
 ### 1. Atualização da Base de Dados
 
-O sistema oferece duas formas de manter o histórico de sorteios atualizado:
+O sistema oferece uma forma de manter o histórico de sorteios atualizado:
 
 #### 1.1 Importação de Excel com Base Histórica
 - Importa o arquivo Excel oficial da Caixa Econômica Federal
 - Valida se as informações do Excel correspondem às já existentes no banco
 - Adiciona apenas os novos registros não existentes na base
-
-#### 1.2 Atualização via API
-- Consulta automaticamente a API oficial da loteria
-- Compara o resultado retornado com o último sorteio armazenado
-- Se identificado um gap (sorteios faltantes entre o último armazenado e o atual), o sistema alerta o usuário para importar o histórico completo
 
 ---
 
@@ -158,8 +153,6 @@ O frontend estará disponível em `http://localhost:4200`.
 ## Fonte dos Dados
 
 - **Histórico completo:** arquivo Excel disponibilizado pela [Caixa Econômica Federal](https://loterias.caixa.gov.br/Paginas/Download-Resultados.aspx)
-- **Resultados recentes:** API oficial `https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena`
-- **Atualização automática:** job Hangfire configurado para verificar novos sorteios periodicamente
 
 ---
 

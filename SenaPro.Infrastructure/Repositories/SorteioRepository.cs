@@ -24,27 +24,10 @@ public class SorteioRepository : ISorteioRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Sorteio?> ObterPorConcursoAsync(int concurso, CancellationToken cancellationToken = default)
-    {
-        return await _context.Sorteios
-            .FirstOrDefaultAsync(s => s.Concurso == concurso, cancellationToken);
-    }
-
     public async Task<bool> ExisteConcursoAsync(int concurso, CancellationToken cancellationToken = default)
     {
         return await _context.Sorteios
             .AnyAsync(s => s.Concurso == concurso, cancellationToken);
-    }
-
-    public async Task<int?> ObterUltimoConcursoAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.Sorteios
-            .MaxAsync(s => (int?)s.Concurso, cancellationToken);
-    }
-
-    public async Task AdicionarAsync(Sorteio sorteio, CancellationToken cancellationToken = default)
-    {
-        await _context.Sorteios.AddAsync(sorteio, cancellationToken);
     }
 
     public async Task AdicionarVariosAsync(IEnumerable<Sorteio> sorteios, CancellationToken cancellationToken = default)
@@ -52,13 +35,13 @@ public class SorteioRepository : ISorteioRepository
         await _context.Sorteios.AddRangeAsync(sorteios, cancellationToken);
     }
 
-    public async Task<int> SalvarAlteracoesAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task<int> ContarAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Sorteios.CountAsync(cancellationToken);
+    }
+
+    public async Task<int> SalvarAlteracoesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 }

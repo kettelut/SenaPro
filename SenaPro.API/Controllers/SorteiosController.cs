@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using SenaPro.Application.Services;
 using SenaPro.Domain.Interfaces;
 using SenaPro.Domain.Results;
 
@@ -8,64 +9,18 @@ namespace SenaPro.API.Controllers;
 [Route("api/[controller]")]
 public class SorteiosController : ControllerBase
 {
-    private readonly ISorteioRepository _sorteioRepository;
-    private readonly IApiLoteriaService _apiLoteriaService;
     private readonly IExcelImportService _excelImportService;
     private readonly IAnaliseEstatisticaService _analiseEstatisticaService;
 
     public SorteiosController(
-        ISorteioRepository sorteioRepository,
-        IApiLoteriaService apiLoteriaService,
         IExcelImportService excelImportService,
         IAnaliseEstatisticaService analiseEstatisticaService)
     {
-        _sorteioRepository = sorteioRepository;
-        _apiLoteriaService = apiLoteriaService;
         _excelImportService = excelImportService;
         _analiseEstatisticaService = analiseEstatisticaService;
     }
 
-    [HttpGet("status")]
-    public async Task<IActionResult> GetStatus(CancellationToken cancellationToken)
-    {
-        var total = await _sorteioRepository.ContarAsync(cancellationToken);
-        var apiUpdates = await _apiLoteriaService.VerificarAtualizacoesAsync(cancellationToken);
-
-        Domain.Entities.Sorteio? ultimoSorteio = null;
-        if (apiUpdates.UltimoConcursoBanco.HasValue)
-        {
-            ultimoSorteio = await _sorteioRepository.ObterPorConcursoAsync(apiUpdates.UltimoConcursoBanco.Value, cancellationToken);
-        }
-
-        return Ok(new
-        {
-            TotalSorteiosBanco = total,
-            UltimoConcursoBanco = apiUpdates.UltimoConcursoBanco,
-            UltimoConcursoApi = apiUpdates.UltimoConcursoApi,
-            HaGap = apiUpdates.HaGap,
-            QuantidadeGap = apiUpdates.QuantidadeGap,
-            UltimoSorteio = ultimoSorteio != null ? new
-            {
-                ultimoSorteio.Concurso,
-                ultimoSorteio.Data,
-                Dezenas = ultimoSorteio.GetDezenas(),
-                ultimoSorteio.Acumulado,
-                ultimoSorteio.PremioSena,
-                ultimoSorteio.GanhadoresSena
-            } : null
-        });
-    }
-
-    [HttpPost("atualizar-api")]
-    public async Task<IActionResult> AtualizarViaApi(CancellationToken cancellationToken)
-    {
-        var resultado = await _apiLoteriaService.AtualizarAsync(cancellationToken);
-        if (!resultado.Sucesso)
-        {
-            return BadRequest(resultado);
-        }
-        return Ok(resultado);
-    }
+    // ── EPIC-001: Importação de Excel ────────────────────────────────
 
     [HttpPost("importar-excel")]
     public async Task<IActionResult> ImportarExcel(IFormFile file, CancellationToken cancellationToken)
@@ -89,7 +44,6 @@ public class SorteiosController : ControllerBase
             });
         }
 
-        // Cria diretório temporário no workspace
         var tempDirectory = Path.Combine(Directory.GetCurrentDirectory(), "temp");
         if (!Directory.Exists(tempDirectory))
         {
@@ -122,10 +76,12 @@ public class SorteiosController : ControllerBase
         }
     }
 
+    // ── EPIC-002: Sorteios Repetidos ────────────────────────────────
+
     [HttpGet("repetidos")]
     public async Task<IActionResult> GetSorteiosRepetidos(CancellationToken cancellationToken)
     {
-        var resultado = await _analiseEstatisticaService.AnalisarSorteiosRepetidosAsync(cancellationToken);
+        var resultado = await _analiseEstatisticaService.AnalisarSorteosRepetidosAsync(cancellationToken);
         if (!resultado.Sucesso)
         {
             return BadRequest(resultado);

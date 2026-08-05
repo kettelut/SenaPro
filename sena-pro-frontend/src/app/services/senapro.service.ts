@@ -1,9 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
 import {
-  SorteioStatus,
-  AtualizacaoApiResultado,
   ImportacaoResultado,
   SorteiosRepetidosResultado,
   ConfiguracaoGeracaoJogos,
@@ -17,14 +16,6 @@ export class SenaProService {
   private apiUrl = 'http://localhost:5000/api';
 
   constructor(private http: HttpClient) {}
-
-  getStatus(): Observable<SorteioStatus> {
-    return this.http.get<SorteioStatus>(`${this.apiUrl}/sorteios/status`);
-  }
-
-  atualizarViaApi(): Observable<AtualizacaoApiResultado> {
-    return this.http.post<AtualizacaoApiResultado>(`${this.apiUrl}/sorteios/atualizar-api`, {});
-  }
 
   importarExcel(file: File): Observable<ImportacaoResultado> {
     const formData = new FormData();

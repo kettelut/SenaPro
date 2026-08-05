@@ -35,10 +35,10 @@ public class AnaliseEstatisticaServiceTests : IDisposable
     #region Testes de Análise de Sorteios Repetidos
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveRetornarSucesso()
+    public async Task AnalisarSorteosRepetidosAsync_DeveRetornarSucesso()
     {
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         resultado.Sucesso.Should().BeTrue("a análise deve ser bem-sucedida");
@@ -46,12 +46,12 @@ public class AnaliseEstatisticaServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveRetornarNaoExistemQuandoBancoVazio()
+    public async Task AnalisarSorteosRepetidosAsync_DeveRetornarNaoExistemQuandoBancoVazio()
     {
         // Arrange - Banco vazio
 
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         resultado.ExistemRepetidos.Should().BeFalse("banco vazio não tem sorteios repetidos");
@@ -59,7 +59,7 @@ public class AnaliseEstatisticaServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveIdentificarSorteiosRepetidos()
+    public async Task AnalisarSorteosRepetidosAsync_DeveIdentificarSorteiosRepetidos()
     {
         // Arrange - Dois sorteios com as mesmas dezenas
         var dezenas = new byte[] { 4, 15, 23, 33, 42, 51 };
@@ -91,7 +91,7 @@ public class AnaliseEstatisticaServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         resultado.ExistemRepetidos.Should().BeTrue("existem sorteios com as mesmas dezenas");
@@ -100,7 +100,7 @@ public class AnaliseEstatisticaServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveIdentificarSorteiosRepetidosIndependenteDaOrdem()
+    public async Task AnalisarSorteosRepetidosAsync_DeveIdentificarSorteiosRepetidosIndependenteDaOrdem()
     {
         // Arrange - Mesmas dezenas em ordens diferentes
         _context.Sorteios.Add(new Sorteio
@@ -132,14 +132,14 @@ public class AnaliseEstatisticaServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         resultado.ExistemRepetidos.Should().BeTrue("as dezenas são as mesmas independente da ordem");
     }
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveRetornarInformacoesDosPares()
+    public async Task AnalisarSorteosRepetidosAsync_DeveRetornarInformacoesDosPares()
     {
         // Arrange
         _context.Sorteios.Add(new Sorteio
@@ -169,7 +169,7 @@ public class AnaliseEstatisticaServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         var par = resultado.Pares.First();
@@ -181,7 +181,7 @@ public class AnaliseEstatisticaServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveRetornarMensagemInformativa()
+    public async Task AnalisarSorteosRepetidosAsync_DeveRetornarMensagemInformativa()
     {
         // Arrange
         _context.Sorteios.Add(new Sorteio
@@ -199,14 +199,14 @@ public class AnaliseEstatisticaServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         resultado.Mensagem.Should().NotBeNullOrEmpty("deve conter mensagem informativa");
     }
 
     [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveEncontrarMultiplosPares()
+    public async Task AnalisarSorteosRepetidosAsync_DeveEncontrarMultiplosPares()
     {
         // Arrange - Três sorteios com as mesmas dezenas (formam 3 pares únicos)
         _context.Sorteios.Add(new Sorteio
@@ -248,10 +248,74 @@ public class AnaliseEstatisticaServiceTests : IDisposable
         await _context.SaveChangesAsync();
 
         // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
 
         // Assert
         resultado.QuantidadePares.Should().Be(3, "3 sorteios iguais formam 3 pares (C(3,2) = 3)");
+    }
+
+    [Fact]
+    public async Task AnalisarSorteosRepetidosAsync_NaoDeveConsiderarSorteiosParciais()
+    {
+        // Arrange - Sorteios com apenas algumas dezenas iguais
+        _context.Sorteios.Add(new Sorteio
+        {
+            Concurso = 1000,
+            Data = new DateOnly(2020, 1, 1),
+            Dezena1 = 1,
+            Dezena2 = 2,
+            Dezena3 = 3,
+            Dezena4 = 4,
+            Dezena5 = 5,
+            Dezena6 = 6
+        });
+
+        _context.Sorteios.Add(new Sorteio
+        {
+            Concurso = 2000,
+            Data = new DateOnly(2022, 1, 1),
+            Dezena1 = 1,
+            Dezena2 = 2,
+            Dezena3 = 3,
+            Dezena4 = 4,
+            Dezena5 = 5,
+            Dezena6 = 10 // Última dezena diferente
+        });
+
+        await _context.SaveChangesAsync();
+
+        // Act
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
+
+        // Assert
+        resultado.ExistemRepetidos.Should().BeFalse("sorteios com dezenas diferentes não são repetidos");
+    }
+
+    [Fact]
+    public async Task AnalisarSorteosRepetidosAsync_DeveProcessarGrandeQuantidade()
+    {
+        // Arrange - Simula base com muitos sorteios (sem repetidos)
+        for (int i = 1; i <= 1000; i++)
+        {
+            _context.Sorteios.Add(new Sorteio
+            {
+                Concurso = i,
+                Data = new DateOnly(2020, 1, 1).AddDays(i),
+                Dezena1 = (byte)(i % 60 + 1),
+                Dezena2 = (byte)((i + 10) % 60 + 1),
+                Dezena3 = (byte)((i + 20) % 60 + 1),
+                Dezena4 = (byte)((i + 30) % 60 + 1),
+                Dezena5 = (byte)((i + 40) % 60 + 1),
+                Dezena6 = (byte)((i + 50) % 60 + 1)
+            });
+        }
+        await _context.SaveChangesAsync();
+
+        // Act
+        var resultado = await _analiseService.AnalisarSorteosRepetidosAsync();
+
+        // Assert
+        resultado.Sucesso.Should().BeTrue("deve processar grande quantidade de sorteios");
     }
 
     #endregion
@@ -370,74 +434,6 @@ public class AnaliseEstatisticaServiceTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
             () => _analiseService.VerificarDezenasJaSorteadasAsync(dezenasInvalidas));
-    }
-
-    #endregion
-
-    #region Testes de Casos de Borda
-
-    [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_NaoDeveConsiderarSorteiosParciais()
-    {
-        // Arrange - Sorteios com apenas algumas dezenas iguais
-        _context.Sorteios.Add(new Sorteio
-        {
-            Concurso = 1000,
-            Data = new DateOnly(2020, 1, 1),
-            Dezena1 = 1,
-            Dezena2 = 2,
-            Dezena3 = 3,
-            Dezena4 = 4,
-            Dezena5 = 5,
-            Dezena6 = 6
-        });
-
-        _context.Sorteios.Add(new Sorteio
-        {
-            Concurso = 2000,
-            Data = new DateOnly(2022, 1, 1),
-            Dezena1 = 1,
-            Dezena2 = 2,
-            Dezena3 = 3,
-            Dezena4 = 4,
-            Dezena5 = 5,
-            Dezena6 = 10 // Última dezena diferente
-        });
-
-        await _context.SaveChangesAsync();
-
-        // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
-
-        // Assert
-        resultado.ExistemRepetidos.Should().BeFalse("sorteios com dezenas diferentes não são repetidos");
-    }
-
-    [Fact]
-    public async Task AnalisarSorteiosRepetidosAsync_DeveProcessarGrandeQuantidade()
-    {
-        // Arrange - Simula base com muitos sorteios (sem repetidos)
-        for (int i = 1; i <= 1000; i++)
-        {
-            _context.Sorteios.Add(new Sorteio
-            {
-                Concurso = i,
-                Data = new DateOnly(2020, 1, 1).AddDays(i),
-                Dezena1 = (byte)(i % 60 + 1),
-                Dezena2 = (byte)((i + 10) % 60 + 1),
-                Dezena3 = (byte)((i + 20) % 60 + 1),
-                Dezena4 = (byte)((i + 30) % 60 + 1),
-                Dezena5 = (byte)((i + 40) % 60 + 1),
-                Dezena6 = (byte)((i + 50) % 60 + 1)
-            });
-        }
-        await _context.SaveChangesAsync();
-
-        // Act
-        var resultado = await _analiseService.AnalisarSorteiosRepetidosAsync();
-
-        // Assert
-        resultado.Sucesso.Should().BeTrue("deve processar grande quantidade de sorteios");
     }
 
     #endregion

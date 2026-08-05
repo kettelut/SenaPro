@@ -15,7 +15,14 @@ public class AnaliseEstatisticaService : IAnaliseEstatisticaService
         _sorteioRepository = sorteioRepository;
     }
 
-    public async Task<SorteiosRepetidosResultado> AnalisarSorteiosRepetidosAsync(CancellationToken cancellationToken = default)
+    #region Análise de Sorteios Repetidos
+
+    /// <summary>
+    /// Analisa se existem sorteios repetidos no histórico.
+    /// Sorteios repetidos são aqueles que possuem as mesmas 6 dezenas,
+    /// independente da ordem em que foram sorteadas.
+    /// </summary>
+    public async Task<SorteiosRepetidosResultado> AnalisarSorteosRepetidosAsync(CancellationToken cancellationToken = default)
     {
         var resultado = new SorteiosRepetidosResultado();
 
@@ -37,12 +44,7 @@ public class AnaliseEstatisticaService : IAnaliseEstatisticaService
 
             foreach (var sorteio in sorteios)
             {
-                var dezenasOrdenadas = new byte[]
-                {
-                    sorteio.Dezena1, sorteio.Dezena2, sorteio.Dezena3,
-                    sorteio.Dezena4, sorteio.Dezena5, sorteio.Dezena6
-                };
-                Array.Sort(dezenasOrdenadas);
+                var dezenasOrdenadas = ObterDezenasOrdenadas(sorteio);
                 var chave = string.Join(",", dezenasOrdenadas);
 
                 if (!gruposPorDezenas.ContainsKey(chave))
@@ -59,10 +61,8 @@ public class AnaliseEstatisticaService : IAnaliseEstatisticaService
             {
                 if (grupo.Count > 1)
                 {
-                    // Ordena por concurso para criar pares ordenados
                     var ordenados = grupo.OrderBy(s => s.Concurso).ToList();
 
-                    // Gera todas as combinações de pares
                     for (int i = 0; i < ordenados.Count; i++)
                     {
                         for (int j = i + 1; j < ordenados.Count; j++)
@@ -76,11 +76,7 @@ public class AnaliseEstatisticaService : IAnaliseEstatisticaService
                                 Data1 = primeiro.Data,
                                 Concurso2 = segundo.Concurso,
                                 Data2 = segundo.Data,
-                                Dezenas = new byte[]
-                                {
-                                    primeiro.Dezena1, primeiro.Dezena2, primeiro.Dezena3,
-                                    primeiro.Dezena4, primeiro.Dezena5, primeiro.Dezena6
-                                }.OrderBy(d => d).ToArray()
+                                Dezenas = ObterDezenasOrdenadas(primeiro)
                             });
                         }
                     }
@@ -112,45 +108,59 @@ public class AnaliseEstatisticaService : IAnaliseEstatisticaService
         }
     }
 
+    #endregion
+
+    #region Verificação de Dezenas Já Sorteadas
+
+    /// <summary>
+    /// Verifica se um conjunto de dezenas já foi sorteado em algum concurso.
+    /// </summary>
     public async Task<bool> VerificarDezenasJaSorteadasAsync(byte[] dezenas, CancellationToken cancellationToken = default)
     {
-        // Validações
         if (dezenas == null || dezenas.Length != 6)
-        {
             throw new ArgumentException("Devem ser informadas exatamente 6 dezenas.", nameof(dezenas));
-        }
 
-        // Verifica se todas as dezenas estão no intervalo válido
         foreach (var dezena in dezenas)
         {
             if (dezena < 1 || dezena > 60)
-            {
                 throw new ArgumentException("As dezenas devem estar entre 1 e 60.", nameof(dezenas));
-            }
         }
 
-        // Ordena as dezenas para comparação
-        var dezenasOrdenadas = dezenas.OrderBy(d => d).ToArray();
+        var dezenasOrdenadas = ObterDezenasOrdenadasArray(dezenas);
         var chaveDezenas = string.Join(",", dezenasOrdenadas);
 
         var sorteios = await _sorteioRepository.ObterTodosAsync(cancellationToken);
 
         foreach (var sorteio in sorteios)
         {
-            var dezenasSorteio = new byte[]
-            {
-                sorteio.Dezena1, sorteio.Dezena2, sorteio.Dezena3,
-                sorteio.Dezena4, sorteio.Dezena5, sorteio.Dezena6
-            };
-            Array.Sort(dezenasSorteio);
-            var chaveSorteio = string.Join(",", dezenasSorteio);
-
+            var chaveSorteio = string.Join(",", ObterDezenasOrdenadas(sorteio));
             if (chaveDezenas == chaveSorteio)
-            {
                 return true;
-            }
         }
 
         return false;
     }
+
+    #endregion
+
+    #region Helpers
+
+    /// <summary>
+    /// Extrai as 6 dezenas do sorteio como array ordenado.
+    /// </summary>
+    private byte[] ObterDezenasOrdenadas(Domain.Entities.Sorteio sorteio) =>
+        ObterDezenas(sorteio).OrderBy(d => d).ToArray();
+
+    /// <summary>
+    /// Extrai as 6 dezenas do sorteio como array não ordenado.
+    /// </summary>
+    private byte[] ObterDezenas(Domain.Entities.Sorteio sorteio) =>
+        new[] { sorteio.Dezena1, sorteio.Dezena2, sorteio.Dezena3, sorteio.Dezena4, sorteio.Dezena5, sorteio.Dezena6 };
+
+    /// <summary>
+    /// Ordena um array de dezenas.
+    /// </summary>
+    private byte[] ObterDezenasOrdenadasArray(byte[] dezenas) => dezenas.OrderBy(d => d).ToArray();
+
+    #endregion
 }

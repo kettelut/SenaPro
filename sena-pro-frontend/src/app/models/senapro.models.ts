@@ -1,21 +1,4 @@
-export interface Sorteio {
-  concurso: number;
-  data: string;
-  dezenas: number[];
-  acumulado: boolean;
-  premioSena?: number;
-  ganhadoresSena?: number;
-}
-
-export interface SorteioStatus {
-  totalSorteiosBanco: number;
-  ultimoConcursoBanco?: number;
-  ultimoConcursoApi?: number;
-  haGap: boolean;
-  quantidadeGap: number;
-  ultimoSorteio?: Sorteio;
-}
-
+// === EPIC-001: Importação Excel ===
 export interface ImportacaoResultado {
   sucesso: boolean;
   mensagem: string;
@@ -24,17 +7,7 @@ export interface ImportacaoResultado {
   erros: string[];
 }
 
-export interface AtualizacaoApiResultado {
-  sucesso: boolean;
-  mensagem: string;
-  ultimoConcursoBanco?: number;
-  ultimoConcursoApi?: number;
-  haGap: boolean;
-  quantidadeGap: number;
-  novosSorteios: number;
-  erros: string[];
-}
-
+// === EPIC-002: Sorteios Repetidos ===
 export interface SorteioRepetidoInfo {
   concurso1: number;
   data1: string;
@@ -52,6 +25,7 @@ export interface SorteiosRepetidosResultado {
   erros: string[];
 }
 
+// === EPIC-003: Gerador Inteligente de Jogos ===
 export interface JogoSugerido {
   id: number;
   dezenas: number[];

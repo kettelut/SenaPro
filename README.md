@@ -60,9 +60,7 @@ Este projeto é desenvolvido utilizando **TDD (Test-Driven Development)**:
 | Frontend | Angular (LTS) |
 | Banco de dados | PostgreSQL |
 | ORM | Entity Framework Core + Npgsql |
-| Agendamento | Hangfire |
 | Documentação | Swagger (Swashbuckle) |
-| Análise estatística | MathNet.Numerics |
 | Importação de dados | EPPlus |
 | Infraestrutura local | Docker Desktop |
 
@@ -164,9 +162,6 @@ As configurações da aplicação ficam em `SenaPro.API/appsettings.json`:
 {
   "ConnectionStrings": {
     "DefaultConnection": "Host=localhost;Port=5432;Database=senapro;Username=senapro;Password=senapro"
-  },
-  "Hangfire": {
-    "IntervalMinutes": 60
   }
 }
 ```

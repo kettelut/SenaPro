@@ -1,15 +1,19 @@
 using Microsoft.EntityFrameworkCore;
-using SenaPro.Infrastructure.Data;
-using SenaPro.Domain.Interfaces;
-using SenaPro.Infrastructure.Repositories;
 using SenaPro.Application.Services;
-using Hangfire;
-using Hangfire.PostgreSql;
+using SenaPro.Domain.Interfaces;
+using SenaPro.Infrastructure.Data;
+using SenaPro.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+// ── MVC Application Parts ─────────────────────────────────────────────
+// Registra explicitamente os assemblies que contêm controllers como
+// Application Parts. Isso garante que o routing engine descubra e casem
+// as rotas em runtime, não apenas o Swashbuckle via reflexão.
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(SenaPro.API.Controllers.SorteiosController).Assembly)
+    .AddApplicationPart(typeof(SenaPro.API.Controllers.GeradorController).Assembly);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -26,29 +30,6 @@ builder.Services.AddScoped<IAnaliseEstatisticaService, AnaliseEstatisticaService
 builder.Services.AddScoped<IExcelImportService, ExcelImportService>();
 builder.Services.AddScoped<IGeradorJogosService, GeradorJogosService>();
 
-// Configure typed HttpClient for ApiLoteriaService
-builder.Services.AddHttpClient<IApiLoteriaService, ApiLoteriaService>();
-
-// Configure Hangfire
-builder.Services.AddHangfire(config => config
-    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-    .UseSimpleAssemblyNameTypeSerializer()
-    .UseRecommendedSerializerSettings()
-    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
-
-builder.Services.AddHangfireServer();
-
-// Configure CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins("http://localhost:4200")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -58,20 +39,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors();
-app.UseAuthorization();
-app.UseHangfireDashboard(); // Exposes Hangfire Dashboard at /hangfire
-
 app.MapControllers();
 
-// Configure Hangfire recurring job
-using (var scope = app.Services.CreateScope())
-{
-    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
-    recurringJobManager.AddOrUpdate<IApiLoteriaService>(
-        "verificar-atualizacoes-megasena",
-        service => service.AtualizarAsync(CancellationToken.None),
-        Cron.Hourly);
-}
-
-app.Run();
+app.Run();

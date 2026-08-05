@@ -6,8 +6,6 @@
 
   <ItemGroup>
     <PackageReference Include="EPPlus" Version="7.5.2" />
-    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.15" />
   </ItemGroup>
 
   <PropertyGroup>

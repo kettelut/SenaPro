@@ -14,7 +14,7 @@ public interface IAnaliseEstatisticaService
     /// </summary>
     /// <param name="cancellationToken">Token de cancelamento.</param>
     /// <returns>Resultado da análise com lista de pares repetidos.</returns>
-    Task<SorteiosRepetidosResultado> AnalisarSorteiosRepetidosAsync(CancellationToken cancellationToken = default);
+    Task<SorteiosRepetidosResultado> AnalisarSorteosRepetidosAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Verifica se um conjunto de dezenas já foi sorteado em algum concurso.

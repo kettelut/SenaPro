@@ -49,7 +49,7 @@ public class GeradorJogosService : IGeradorJogosService
         {
             // Carrega sorteios históricos para análise se necessário
             var sorteiosHistoricos = new List<Domain.Entities.Sorteio>();
-            if (configuracao.AnalisesRespeitadas.Contains("SorteiosRepetidos"))
+            if (configuracao.AnalisesRespeitadas.Any())
             {
                 sorteiosHistoricos = await _sorteioRepository.ObterTodosAsync(cancellationToken);
             }
@@ -57,6 +57,8 @@ public class GeradorJogosService : IGeradorJogosService
             var jogos = new List<JogoSugerido>();
             var jogosGerados = new HashSet<string>();
             var id = 1;
+            int tentativasFalhasConsecutivas = 0;
+            int maxTentativasSemSucesso = configuracao.QuantidadeJogos * 50;
 
             while (jogos.Count < configuracao.QuantidadeJogos)
             {
@@ -65,14 +67,27 @@ public class GeradorJogosService : IGeradorJogosService
 
                 // Verifica se já foi gerado
                 if (jogosGerados.Contains(chave))
+                {
+                    tentativasFalhasConsecutivas++;
+                    if (tentativasFalhasConsecutivas > maxTentativasSemSucesso)
+                        break;
                     continue;
+                }
 
-                // Verifica análise de sorteios repetidos
+                tentativasFalhasConsecutivas = 0;
+
+                // Aplica filtros das análises selecionadas
+                var aprovado = true;
+
                 if (configuracao.AnalisesRespeitadas.Contains("SorteiosRepetidos"))
                 {
+                    // Verifica se o jogo já foi sorteado no histórico
                     if (await EhJogoSorteado(dezenas, sorteiosHistoricos))
-                        continue;
+                        aprovado = false;
                 }
+
+                if (!aprovado)
+                    continue;
 
                 jogosGerados.Add(chave);
                 jogos.Add(new JogoSugerido
@@ -86,7 +101,9 @@ public class GeradorJogosService : IGeradorJogosService
             resultado.Sucesso = true;
             resultado.Jogos = jogos;
             resultado.QuantidadeGerada = jogos.Count;
-            resultado.Mensagem = $"Foram gerados {jogos.Count} jogo(s) com sucesso.";
+            resultado.Mensagem = jogos.Count > 0
+                ? $"Foram gerados {jogos.Count} jogo(s) com sucesso."
+                : "Não foi possível gerar jogos dentro das restrições selecionadas. Tente reduzir o número de análises.";
 
             return resultado;
         }
@@ -109,19 +126,13 @@ public class GeradorJogosService : IGeradorJogosService
         var erros = new List<string>();
 
         if (config.QuantidadeJogos <= 0)
-        {
             erros.Add("A quantidade de jogos deve ser maior que zero.");
-        }
 
         if (config.QuantidadeNumeros < MinNumeros)
-        {
             erros.Add($"A quantidade de números deve ser no mínimo {MinNumeros}.");
-        }
 
         if (config.QuantidadeNumeros > MaxNumeros)
-        {
             erros.Add($"A quantidade de números deve ser no máximo {MaxNumeros}.");
-        }
 
         return erros;
     }

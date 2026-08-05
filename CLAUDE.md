@@ -6,17 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **.NET 8** target everywhere (`net8.0`) — trust the csproj files; all projects use `net8.0`. Install the **.NET 8 SDK**.
 - Multi-project: `SenaPro.slnx`
-  - **SenaPro.API** — ASP.NET Core Web API host + Hangfire / Swagger
+  - **SenaPro.API** — ASP.NET Core Web API host + Swagger
   - **SenaPro.Application** — use-cases, services, DTOs
   - **SenaPro.Domain** — entities, repositories interface, business rules
-  - **SenaPro.Infrastructure** — EF Core (Npgsql), repos, external integrations (`servicebus2.caixa.gov.br`), EPPlus Excel imports
+  - **SenaPro.Infrastructure** — EF Core (Npgsql), repos, EPPlus Excel imports
   - **SenaPro.Tests** — unit tests
 - `sena-pro-frontend/` — Angular (LTS) + Dockerfile
 
 ## Local dev endpoints
 
 - Swagger UI → `http://localhost:5000/swagger` (somente ambiente **Development**)
-- Hangfire Dashboard → `http://localhost:5000/hangfire` (somente ambiente **Development**)
 
 ## Pós-clone (antes de subir os containers)
 
@@ -66,4 +65,3 @@ ng serve                      # → http://localhost:4200
 ## Key implementation notes
 
 - **TDD workflow** required: write failing test first, then minimal code to green it, then refactor with tests still passing. Do not ship a feature that has no corresponding failing test already written.
-- Hangfire persists scheduled tasks against PostgreSQL — dropping the DB removes queued jobs; be aware when running `drop`/re-create flows in local dev.

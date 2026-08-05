@@ -1,167 +1,57 @@
 <div class="home-container">
   <div class="hero-section">
     <h1>Análise Inteligente Mega-Sena</h1>
-    <p>Gerencie o histórico de sorteios oficiais da Caixa, execute auditorias estatísticas e gere apostas com base em inteligência histórica.</p>
+    <p>Importa o histórico oficial de sorteios da Caixa, identifica repetições históricas e gera jogos com base em padrões estatísticos.</p>
   </div>
 
-  <!-- Loading Geral -->
-  <div *ngIf="loadingStatus()" class="loading-overlay">
-    <div class="spinner"></div>
-    <p>Carregando status do sistema...</p>
-  </div>
-
-  <div *ngIf="!loadingStatus()" class="dashboard-grid">
-    <!-- Card 1: Estatísticas Rápidas -->
-    <div class="card status-card">
-      <div class="card-title">
-        <span>📈</span> Status do Banco de Dados
-      </div>
-      <div class="status-metrics">
-        <div class="metric">
-          <span class="metric-value">{{ status()?.totalSorteiosBanco }}</span>
-          <span class="metric-label">Sorteios Salvos</span>
-        </div>
-        <div class="metric">
-          <span class="metric-value">{{ status()?.ultimoConcursoBanco || 'Nenhum' }}</span>
-          <span class="metric-label">Último Concurso</span>
-        </div>
-      </div>
+  <!-- Importação Excel -->
+  <div class="card action-card">
+    <div class="card-title">
+      <span>📁</span> Importar Planilha Histórica
     </div>
+    <p class="action-desc">Importe o arquivo Excel oficial de resultados da Mega-Sena disponível no site da Caixa. O sistema valida, deduplica e persiste os registros.</p>
 
-    <!-- Card 2: Situação da API -->
-    <div class="card api-card">
-      <div class="card-title">
-        <span>🌐</span> Status da Sincronização
-      </div>
-      <div class="sync-status">
-        <div class="sync-row">
-          <span>Concurso Oficial (API):</span>
-          <strong>{{ status()?.ultimoConcursoApi || 'Indisponível' }}</strong>
-        </div>
-        <div class="sync-row">
-          <span>Banco de Dados:</span>
-          <strong>{{ status()?.ultimoConcursoBanco || 'Vazio' }}</strong>
-        </div>
-        
-        <div *ngIf="status()?.haGap" class="alert-box warning">
-          <span>⚠️</span> Existem <strong>{{ status()?.quantidadeGap }}</strong> sorteio(s) pendente(s) entre sua base e o servidor da Caixa.
-        </div>
-        <div *ngIf="!status()?.haGap && (status()?.totalSorteiosBanco || 0) > 0" class="alert-box success">
-          <span>✓</span> Sua base de dados está totalmente atualizada.
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3: Último Sorteio Cadastrado -->
-    <div *ngIf="status()?.ultimoSorteio" class="card last-draw-card">
-      <div class="card-title">
-        <span>🎉</span> Último Concurso Cadastrado (Nº {{ status()?.ultimoSorteio?.concurso }})
-      </div>
-      <div class="draw-details">
-        <div class="draw-date">Sorteado em: {{ status()?.ultimoSorteio?.data | date:'dd/MM/yyyy' }}</div>
-        
-        <!-- Dezenas em formato de esferas -->
-        <div class="balls-container">
-          <div *ngFor="let num of status()?.ultimoSorteio?.dezenas" class="ball">
-            {{ num | number:'2.0' }}
-          </div>
-        </div>
-
-        <div class="draw-financials">
-          <div class="badge" [class.badge-accumulated]="status()?.ultimoSorteio?.acumulado" [class.badge-success]="!status()?.ultimoSorteio?.acumulado">
-            {{ status()?.ultimoSorteio?.acumulado ? 'Acumulou' : 'Saiu Prêmio' }}
-          </div>
-          <div class="prize-info" *ngIf="status()?.ultimoSorteio?.premioSena">
-            <span>Prêmio Principal:</span>
-            <strong>{{ status()?.ultimoSorteio?.premioSena | currency:'BRL':'symbol':'1.2-2' }}</strong>
-          </div>
-          <div class="winners-info">
-            <span>Ganhadores da Sena:</span>
-            <strong>{{ status()?.ultimoSorteio?.ganhadoresSena }} aposta(s)</strong>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="!loadingStatus()" class="actions-grid">
-    <!-- Atualização via API -->
-    <div class="card action-card">
-      <div class="card-title">
-        <span>⚡</span> Atualização Instantânea via API
-      </div>
-      <p class="action-desc">Consulta a API pública das Loterias Caixa, identifica se há um novo concurso disponível e o importa automaticamente para o sistema.</p>
-      
-      <div class="action-trigger">
-        <button class="btn btn-primary" (click)="atualizarApi()" [disabled]="loadingApiUpdate()">
-          <div *ngIf="loadingApiUpdate()" class="spinner spinner-btn"></div>
-          Sincronizar Último Concurso
-        </button>
-      </div>
-
-      <!-- Feedback API -->
-      <div *ngIf="apiResult()" class="feedback-container">
-        <div class="alert-box" [class.success]="apiResult()?.sucesso" [class.danger]="!apiResult()?.sucesso">
-          <p class="feedback-title">{{ apiResult()?.mensagem }}</p>
-          <div *ngIf="(apiResult()?.novosSorteios || 0) > 0" class="feedback-details">
-            Registrado 1 novo concurso no banco de dados.
-          </div>
-          <ul *ngIf="apiResult()?.erros && apiResult()!.erros.length > 0" class="error-list">
-            <li *ngFor="let err of apiResult()?.erros">{{ err }}</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Importação Excel -->
-    <div class="card action-card">
-      <div class="card-title">
-        <span>📁</span> Importar Planilha Histórica
-      </div>
-      <p class="action-desc">Se a base de dados estiver muito desatualizada, faça a importação em lote do arquivo Excel oficial de resultados da Mega-Sena disponível no site da Caixa.</p>
-
-      <!-- Área de Drag and Drop -->
-      <div 
-        class="drag-drop-zone"
-        [class.drag-over]="dragOver"
-        (dragover)="onDragOver($event)"
-        (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)"
-        (click)="fileInput.click()"
+    <!-- Área de Drag and Drop -->
+    <div
+      class="drag-drop-zone"
+      [class.drag-over]="dragOver"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+      (click)="fileInput.click()"
+    >
+      <input
+        type="file"
+        #fileInput
+        style="display: none"
+        accept=".xlsx, .xls"
+        (change)="onFileSelected($event)"
       >
-        <input 
-          type="file" 
-          #fileInput 
-          style="display: none" 
-          accept=".xlsx, .xls"
-          (change)="onFileSelected($event)"
-        >
-        <span class="upload-icon">📥</span>
-        <span class="upload-text">Arraste a planilha do Excel ou clique aqui para selecionar</span>
-        <span class="upload-hint">Formatos suportados: .xlsx, .xls</span>
-      </div>
+      <span class="upload-icon">📥</span>
+      <span class="upload-text">Arraste a planilha do Excel ou clique aqui para selecionar</span>
+      <span class="upload-hint">Formatos suportados: .xlsx, .xls</span>
+    </div>
 
-      <div *ngIf="selectedFile" class="selected-file-container">
-        <span class="file-icon">📄</span>
-        <span class="file-name">{{ selectedFile.name }} ({{ (selectedFile.size / 1024) | number:'1.0-1' }} KB)</span>
-        <button class="btn btn-primary" (click)="importarExcel()" [disabled]="loadingImport()">
-          <div *ngIf="loadingImport()" class="spinner spinner-btn"></div>
-          Iniciar Importação
-        </button>
-      </div>
+    <div *ngIf="selectedFile" class="selected-file-container">
+      <span class="file-icon">📄</span>
+      <span class="file-name">{{ selectedFile.name }} ({{ (selectedFile.size / 1024) | number:'1.0-1' }} KB)</span>
+      <button class="btn btn-primary" (click)="importarExcel()" [disabled]="loadingImport">
+        <div *ngIf="loadingImport" class="spinner spinner-btn"></div>
+        Iniciar Importação
+      </button>
+    </div>
 
-      <!-- Feedback Importação -->
-      <div *ngIf="importResult()" class="feedback-container">
-        <div class="alert-box" [class.success]="importResult()?.sucesso" [class.danger]="!importResult()?.sucesso">
-          <p class="feedback-title">{{ importResult()?.mensagem }}</p>
-          <div *ngIf="importResult()?.sucesso" class="feedback-details">
-            <p>📥 Registros inseridos: <strong>{{ importResult()?.registrosInseridos }}</strong></p>
-            <p>⏭️ Registros ignorados (duplicados): <strong>{{ importResult()?.registrosIgnorados }}</strong></p>
-          </div>
-          <ul *ngIf="importResult()?.erros && importResult()!.erros.length > 0" class="error-list">
-            <li *ngFor="let err of importResult()?.erros">{{ err }}</li>
-          </ul>
+    <!-- Feedback Importação -->
+    <div *ngIf="importResult" class="feedback-container">
+      <div class="alert-box" [class.success]="importResult.sucesso" [class.danger]="!importResult.sucesso">
+        <p class="feedback-title">{{ importResult.mensagem }}</p>
+        <div *ngIf="importResult.sucesso" class="feedback-details">
+          <p>📥 Registros inseridos: <strong>{{ importResult.registrosInseridos }}</strong></p>
+          <p>⏭️ Registros ignorados (duplicados): <strong>{{ importResult.registrosIgnorados }}</strong></p>
         </div>
+        <ul *ngIf="importResult.erros?.length > 0" class="error-list">
+          <li *ngFor="let err of importResult.erros">{{ err }}</li>
+        </ul>
       </div>
     </div>
   </div>

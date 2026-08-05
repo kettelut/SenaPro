@@ -8,42 +8,27 @@ namespace SenaPro.Domain.Interfaces;
 public interface ISorteioRepository
 {
     /// <summary>
-    /// Obtém todos os sorteios.
+    /// Obtém todos os sorteios, ordenados por número do concurso (ascendente).
     /// </summary>
     Task<List<Sorteio>> ObterTodosAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Obtém um sorteio pelo número do concurso.
-    /// </summary>
-    Task<Sorteio?> ObterPorConcursoAsync(int concurso, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Verifica se existe um sorteio com o número do concurso.
+    /// Verifica se existe um sorteio com o número do concurso informado.
     /// </summary>
     Task<bool> ExisteConcursoAsync(int concurso, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Obtém o número do último concurso.
-    /// </summary>
-    Task<int?> ObterUltimoConcursoAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Adiciona um novo sorteio.
-    /// </summary>
-    Task AdicionarAsync(Sorteio sorteio, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Adiciona múltiplos sorteios.
+    /// Adiciona múltiplos sorteios ao repositório (batch insert).
     /// </summary>
     Task AdicionarVariosAsync(IEnumerable<Sorteio> sorteios, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Salva as alterações.
-    /// </summary>
-    Task<int> SalvarAlteracoesAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Conta o total de sorteios.
+    /// Conta o total de sorteios no repositório.
     /// </summary>
     Task<int> ContarAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Persiste as alterações pendentes no banco de dados.
+    /// </summary>
+    Task<int> SalvarAlteracoesAsync(CancellationToken cancellationToken = default);
 }
